@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AutoCheck MK - Инспекција на возила</title>
+  
+  <!-- Tailwind CSS & Google Sans Font -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Vue 3 Runtime -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #F2F2F7;
+      color: #0F172A;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Print Styles for A4 Output */
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      body { background-color: #FFFFFF !important; font-size: 12px; }
+      .page-break { page-break-before: always; }
+    }
+  </style>
+</head>
+<body class="antialiased min-h-screen pb-24">
+
+<div id="app">
+  <!-- STICKY HEADER -->
+  <header class="sticky top-0 z-30 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 shadow-sm no-print">
+    <div class="max-w-md mx-auto px-4 py-3">
+      
+      <!-- Top Bar: Title & Action Modals -->
+      <div class="flex justify-between items-center mb-2">
+        <div>
+          <h1 class="font-bold text-lg leading-tight tracking-tight text-slate-900">AutoCheck <span class="text-red-600">MK</span></h1>
+          <p class="text-xs text-slate-500 font-medium">Проверка & Следење на возила</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button @click="openMetadataModal" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-700 rounded-full active:scale-95 transition">
+            ⚙️ Возило
+          </button>
+          <button @click="showArchive = true" class="px-3 py-1.5 text-xs font-semibold bg-red-50 text-red-600 rounded-full active:scale-95 transition relative">
+            📁 Архива
+            <span v-if="savedReports.length" class="ml-1 px-1.5 py-0.5 bg-red-600 text-white rounded-full text-[10px]">
+              {{ savedReports.length }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Vehicle Metadata Display Banner -->
+      <div @click="openMetadataModal" class="bg-slate-50 border border-slate-200/70 rounded-xl p-2.5 cursor-pointer hover:bg-slate-100/80 transition mb-3">
+        <div class="text-sm font-bold text-slate-800">
+          {{ metadata.brandModel || 'Внесете Марка и Модел (напр. VW Golf 7)' }}
+        </div>
+        <div class="flex justify-between text-xs text-slate-500 mt-1">
+          <span><strong>VIN:</strong> {{ metadata.vin || '—' }}</span>
+          <span><strong>Прегледал:</strong> {{ metadata.inspector || '—' }}</span>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-1">
+        <button 
+          v-for="cat in categories" 
+          :key="cat.id"
+          @click="activeCategory = cat.id"
+          :class="[
+            'px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 active:scale-95',
+            activeCategory === cat.id 
+              ? 'bg-slate-900 text-white shadow-sm' 
+              : 'bg-white text-slate-600 border border-slate-200'
+          ]">
+          {{ cat.label }}
+          <span class="ml-1 px-1.5 py-0.2 rounded-full text-[10px]" :class="activeCategory === cat.id ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500'">
+            {{ getCategoryCount(cat.id) }}
+          </span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN CHECKLIST CONTENT -->
+  <main class="max-w-md mx-auto px-4 pt-4 space-y-3.5 no-print">
+    
+    <div 
+      v-for="item in filteredChecklist" 
+      :key="item.id"
+      :class="[
+        'bg-white rounded-2xl p-4 border transition-all duration-200 shadow-sm',
+        activeCardId === item.id ? 'ring-2 ring-red-500/20 shadow-xl border-red-200 -translate-y-0.5' : 'border-slate-100',
+        item.status === 'NOT_OK' ? 'border-l-4 border-l-red-500' : (item.status === 'OK' ? 'border-l-4 border-l-emerald-500' : '')
+      ]"
+      @click="activeCardId = item.id"
+    >
+      <!-- Item Header -->
+      <div class="flex justify-between items-start mb-2">
+        <div>
+          <h3 class="font-bold text-slate-800 text-base leading-snug">{{ item.title }}</h3>
+          <p class="text-xs text-slate-500 mt-0.5">{{ item.subtitle }}</p>
+        </div>
+        <span v-if="item.status" :class="[
+          'px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase',
+          item.status === 'OK' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+        ]">
+          {{ item.status === 'OK' ? 'OK' : 'NOT OK' }}
+        </span>
+      </div>
+
+      <!-- Action Toggles (OK / NOT OK) -->
+      <div class="grid grid-cols-2 gap-2 my-3">
+        <button 
+          @click="setStatus(item, 'OK')"
+          :class="[
+            'py-2.5 px-4 rounded-xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center space-x-1.5',
+            item.status === 'OK' 
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' 
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          ]">
+          <span>✓</span>
+          <span>ОК</span>
+        </button>
+
+        <button 
+          @click="setStatus(item, 'NOT_OK')"
+          :class="[
+            'py-2.5 px-4 rounded-xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center space-x-1.5',
+            item.status === 'NOT_OK' 
+              ? 'bg-red-600 text-white shadow-md shadow-red-600/20' 
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          ]">
+          <span>✕</span>
+          <span>NOT OK</span>
+        </button>
+      </div>
+
+      <!-- SPECIALIZED CONTROLS (Radio buttons / Inputs) -->
+      <div v-if="item.specialType" class="mt-3 pt-3 border-t border-slate-100">
+        <!-- Rims Selector -->
+        <div v-if="item.specialType === 'rims'" class="flex space-x-2">
+          <button v-for="opt in ['ALU', 'МЕТАЛНИ', 'Раткапни']" :key="opt"
+            @click="item.specialValue = opt"
+            :class="['flex-1 py-1.5 text-xs font-semibold rounded-lg border', item.specialValue === opt ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 border-slate-200 text-slate-600']">
+            {{ opt }}
+          </button>
+        </div>
+
+        <!-- Ignition Selector -->
+        <div v-if="item.specialType === 'ignition'" class="flex space-x-2">
+          <button v-for="opt in ['Нормално пали', 'Со кабли']" :key="opt"
+            @click="item.specialValue = opt"
+            :class="['flex-1 py-1.5 text-xs font-semibold rounded-lg border', item.specialValue === opt ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 border-slate-200 text-slate-600']">
+            {{ opt }}
+          </button>
+        </div>
+
+        <!-- Spare Wheel Selector -->
+        <div v-if="item.specialType === 'spare_wheel'" class="flex space-x-1.5">
+          <button v-for="opt in ['Резервна гума', 'Сет Пена + Компресор', 'Нема']" :key="opt"
+            @click="item.specialValue = opt"
+            :class="['flex-1 py-1.5 text-[11px] font-semibold rounded-lg border text-center', item.specialValue === opt ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 border-slate-200 text-slate-600']">
+            {{ opt }}
+          </button>
+        </div>
+
+        <!-- Spare Key Selector -->
+        <div v-if="item.specialType === 'spare_key'" class="flex space-x-2">
+          <button v-for="opt in ['1 Клуч', '2 Клуча', 'Без клуч']" :key="opt"
+            @click="item.specialValue = opt"
+            :class="['flex-1 py-1.5 text-xs font-semibold rounded-lg border', item.specialValue === opt ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 border-slate-200 text-slate-600']">
+            {{ opt }}
+          </button>
+        </div>
+
+        <!-- Odometer Input -->
+        <div v-if="item.specialType === 'odometer'" class="flex items-center space-x-2">
+          <span class="text-xs font-semibold text-slate-600">Запис:</span>
+          <input type="number" v-model="item.specialValue" placeholder="напр. 185000" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-red-500/20">
+          <span class="text-xs text-slate-500 font-bold">км</span>
+        </div>
+      </div>
+
+      <!-- DEFECT DETAIL DRAWER (Triggers on NOT OK) -->
+      <div v-if="item.status === 'NOT_OK'" class="mt-3 pt-3 border-t border-slate-100 space-y-2.5">
+        
+        <!-- Contextual Tag Chips -->
+        <div class="flex flex-wrap gap-1.5">
+          <button 
+            v-for="tag in item.tags" 
+            :key="tag"
+            @click="addTagToComment(item, tag)"
+            class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-red-50 text-red-700 hover:bg-red-100 active:scale-95 transition border border-red-100">
+            + {{ tag }}
+          </button>
+        </div>
+
+        <!-- Comment Input -->
+        <textarea 
+          v-model="item.comment"
+          placeholder="Опишете го дефектот или забелешката..."
+          rows="2"
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+        ></textarea>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM ACTION BUTTONS -->
+    <div class="pt-6 pb-12 space-y-2.5">
+      <button @click="saveInspection" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-2xl shadow-lg shadow-slate-900/10 active:scale-95 transition flex items-center justify-center space-x-2">
+        <span>💾</span>
+        <span>Зачувај го извештајот</span>
+      </button>
+
+      <button @click="triggerPrint" class="w-full py-3.5 bg-white text-slate-800 font-bold rounded-2xl border border-slate-200 active:scale-95 transition flex items-center justify-center space-x-2">
+        <span>🖨️</span>
+        <span>Преглед за принт / PDF</span>
+      </button>
+    </div>
+
+  </main>
+
+  <!-- METADATA EDIT MODAL -->
+  <div v-if="showMetadataModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 no-print">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 animate-in slide-in-from-bottom">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-800">Податоци за возилото</h3>
+        <button @click="showMetadataModal = false" class="text-slate-400 font-bold text-xl px-2">✕</button>
+      </div>
+      
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Марка и Модел</label>
+          <input type="text" v-model="metadata.brandModel" placeholder="напр. Audi A4 2.0 TDI" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-red-500/20">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Број на шасија (VIN)</label>
+          <input type="text" v-model="metadata.vin" placeholder="напр. WAUZZZ8K9BA000000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-red-500/20 uppercase">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Прегледал (Име и Презиме)</label>
+          <input type="text" v-model="metadata.inspector" placeholder="напр. Петар Петровски" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-red-500/20">
+        </div>
+      </div>
+
+      <button @click="showMetadataModal = false" class="w-full py-3 bg-red-600 text-white font-bold rounded-xl shadow-md shadow-red-600/20 active:scale-95 transition">
+        Потврди
+      </button>
+    </div>
+  </div>
+
+  <!-- ARCHIVE DRAWER -->
+  <div v-if="showArchive" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex justify-end no-print">
+    <div class="bg-white w-full max-w-xs h-full p-4 overflow-y-auto space-y-3">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-slate-800">Зачувани прегледи</h3>
+        <button @click="showArchive = false" class="text-slate-400 font-bold text-lg">✕</button>
+      </div>
+
+      <div v-if="!savedReports.length" class="text-xs text-slate-400 text-center py-8">
+        Нема зачувани извештаи во архивата.
+      </div>
+
+      <div v-for="(rep, idx) in savedReports" :key="idx" class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+        <div class="font-bold text-xs text-slate-800">{{ rep.metadata.brandModel || 'Без име' }}</div>
+        <div class="text-[10px] text-slate-500">VIN: {{ rep.metadata.vin || '—' }} | {{ rep.date }}</div>
+        <div class="flex space-x-2 pt-1">
+          <button @click="loadReport(rep)" class="flex-1 py-1 text-[11px] bg-slate-800 text-white font-bold rounded-lg">Вчитај</button>
+          <button @click="deleteReport(idx)" class="py-1 px-2 text-[11px] bg-red-50 text-red-600 font-bold rounded-lg border border-red-100">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRINT REPORT TEMPLATE (Hidden on Screen, Visible on Print) -->
+  <div class="hidden print-only p-8 max-w-4xl mx-auto">
+    <div class="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-end">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900">AutoCheck MK</h1>
+        <p class="text-xs text-slate-600">Извештај за состојба на увезено возило</p>
+      </div>
+      <div class="text-right text-xs text-slate-500">
+        <div><strong>Датум:</strong> {{ currentDate }}</div>
+      </div>
+    </div>
+
+    <!-- Printable Metadata Block -->
+    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6 grid grid-cols-3 gap-4 text-xs">
+      <div><strong>Марка и Модел:</strong> {{ metadata.brandModel || '—' }}</div>
+      <div><strong>VIN (Шасија):</strong> {{ metadata.vin || '—' }}</div>
+      <div><strong>Прегледал:</strong> {{ metadata.inspector || '—' }}</div>
+    </div>
+
+    <!-- Printable Defects Summary -->
+    <div class="mb-6">
+      <h2 class="text-sm font-bold border-b pb-1 mb-3 text-red-600">Регистрирани Оштетувања / Дефекти (NOT OK)</h2>
+      <table class="w-full text-xs text-left border-collapse">
+        <thead>
+          <tr class="bg-slate-100 border-b">
+            <th class="py-2 px-2">Ставка / Секција</th>
+            <th class="py-2 px-2">Специјална вредност</th>
+            <th class="py-2 px-2">Забелешка / Дефект</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in checklist.filter(i => i.status === 'NOT_OK')" :key="item.id" class="border-b">
+            <td class="py-2 px-2 font-bold">{{ item.title }}</td>
+            <td class="py-2 px-2">{{ item.specialValue || '—' }}</td>
+            <td class="py-2 px-2 text-red-700">{{ item.comment || 'Без забелешка' }}</td>
+          </tr>
+          <tr v-if="!checklist.some(i => i.status === 'NOT_OK')">
+            <td colspan="3" class="py-3 px-2 text-center text-slate-400 italic">Нема регистрирани дефекти. Возилото е во пoтполно исправна состојба.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Complete Checklist Grid -->
+    <div>
+      <h2 class="text-sm font-bold border-b pb-1 mb-3">Комплетен преглед (42 Точки)</h2>
+      <div class="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
+        <div v-for="item in checklist" :key="item.id" class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-slate-700">{{ item.title }} <small v-if="item.specialValue" class="text-slate-500">({{ item.specialValue }})</small></span>
+          <span class="font-bold" :class="item.status === 'OK' ? 'text-emerald-600' : (item.status === 'NOT_OK' ? 'text-red-600' : 'text-slate-300')">
+            {{ item.status || 'НЕ ПРОВЕРЕНО' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const { createApp } = Vue;
+
+  createApp({
+    data() {
+      return {
+        activeCardId: null,
+        activeCategory: 'ALL',
+        showMetadataModal: false,
+        showArchive: false,
+        currentDate: new Date().toLocaleDateString('mk-MK'),
+        
+        metadata: {
+          brandModel: '',
+          vin: '',
+          inspector: ''
+        },
+
+        categories: [
+          { id: 'ALL', label: 'СИТЕ' },
+          { id: 'EXTERIOR', label: 'Надворешна' },
+          { id: 'INTERIOR', label: 'Внатрешност' },
+          { id: 'DEFECTS', label: 'Со Оштетувања' },
+          { id: 'PASSED', label: 'Останати OK' }
+        ],
+
+        savedReports: JSON.parse(localStorage.getItem('autocheck_reports') || '[]'),
+
+        checklist: [
+          // EXTERIOR ITEMS (1 - 27)
+          { id: 1, cat: 'EXTERIOR', title: '1. Проверка Течности', subtitle: 'Масло, Антифриз, Гориво', status: null, comment: '', tags: ['НИСКО НИВО', 'ИСТЕКУВАЊЕ', 'ЗАМАСТЕНИЈА'] },
+          { id: 2, cat: 'EXTERIOR', title: '2. Акумулатор', subtitle: 'Состојба и напон', status: null, comment: '', tags: ['ПРАЗЕН', 'СЛАБ НАПОН', 'ОКСИДИРАН'] },
+          { id: 3, cat: 'EXTERIOR', title: '3. Преден Браник', subtitle: 'Оштетувања и монтирање', status: null, comment: '', tags: ['ИЗГРЕБАНО', 'ПУКНАТО', 'СКРШЕНО', 'ИЗМЕСТЕНО'] },
+          { id: 4, cat: 'EXTERIOR', title: '4. Фарови', subtitle: 'Оштетени + Влага', status: null, comment: '', tags: ['ВЛАГА ВНАТРЕ', 'НАПУКНАТО', 'НЕ РАБОТИ', 'ЖОЛТИ'] },
+          { id: 5, cat: 'EXTERIOR', title: '5. Хауба', subtitle: 'Лак и вдлабнатини', status: null, comment: '', tags: ['ИЗГРЕБАНО', 'ВДЛАБНАТИНА', 'ОШТЕТЕН ЛАК'] },
+          { id: 6, cat: 'EXTERIOR', title: '6. Шофершајбна', subtitle: 'Камчиња и пукнатини', status: null, comment: '', tags: ['КАМЧЕ', 'ПУКНАТИНА', 'ОШТЕТЕНА'] },
+          { id: 7, cat: 'EXTERIOR', title: '7. Кров', subtitle: 'Вдлабнатини од град и слично', status: null, comment: '', tags: ['ГРАД / ОШТЕТЕН', 'ВДЛАБНАТИНИ', 'ИЗГРЕБАНО'] },
+          { id: 8, cat: 'EXTERIOR', title: '8. Тркала / Бандажи', subtitle: 'Тип и состојба', status: null, comment: '', specialType: 'rims', specialValue: 'ALU', tags: ['ИЗГРЕБАНИ', 'ИЗВИТКАНИ', 'НЕМА РАТКАПНИ'] },
+          { id: 9, cat: 'EXTERIOR', title: '9. Преглед на гуми', subtitle: 'Шара и состојба', status: null, comment: '', tags: ['ИЗНОСЕНИ', 'ИЗФОРСИРАНИ', 'РАЗЛИЧНИ'] },
+          { id: 10, cat: 'EXTERIOR', title: '10. Прагови', subtitle: 'Лева и десна страна', status: null, comment: '', tags: ['ИЗГРЕБАНО', 'ВДЛАБНАТО', 'РЃА'] },
+          { id: 11, cat: 'EXTERIOR', title: '11. Врати', subtitle: 'Сите 4 врати', status: null, comment: '', tags: ['ИЗГРЕБАНО', 'ВДЛАБНАТО', 'НЕ СЕ ОТВОРА'] },
+          { id: 12, cat: 'EXTERIOR', title: '12. Гепек', subtitle: 'Задна врата', status: null, comment: '', tags: ['ОШТЕТЕНО', 'НЕ СЕ ЗАТВОРА', 'ВДЛАБНАТО'] },
+          { id: 13, cat: 'EXTERIOR', title: '13. Ретровизори', subtitle: 'Лево и десно стакло + куќиште', status: null, comment: '', tags: ['СКРШЕНО СТАКЛО', 'ИЗГРЕБАНО КУЌИШТЕ', 'НЕ СЕ СКАПВА'] },
+          { id: 14, cat: 'EXTERIOR', title: '14. Странични Стакла', subtitle: 'Работење и механизам', status: null, comment: '', tags: ['НЕ СЕ СПУШТА', 'ИЗГРЕБАНО', 'ПУКНАТО'] },
+          { id: 15, cat: 'EXTERIOR', title: '15. Заден Браник', subtitle: 'Оштетувања и рефлектори', status: null, comment: '', tags: ['ИЗГРЕБАНО', 'ПУКНАТО', 'СКРШЕНО'] },
+          { id: 16, cat: 'EXTERIOR', title: '16. Задно стакло', subtitle: 'Греачи и стакло', status: null, comment: '', tags: ['ПУКНАТО', 'НЕ РАБОТАТ ГРЕАЧИ'] },
+          { id: 17, cat: 'EXTERIOR', title: '17. Задни Штопови / Магленки', subtitle: 'Оштетени + Влага', status: null, comment: '', tags: ['ВЛАГА ВНАТРЕ', 'СКРШЕНО', 'НЕ РАБОТИ'] },
+          { id: 18, cat: 'EXTERIOR', title: '18. Паркинг сензори', subtitle: 'Предни и задни', status: null, comment: '', tags: ['НЕ РАБОТАТ', 'ОШТЕТЕН СЕНЗОР', 'ФАЛИ СЕНЗОР'] },
+          { id: 19, cat: 'EXTERIOR', title: '19. ПАЛЕЊЕ', subtitle: 'Состојба при стартување', status: null, comment: '', specialType: 'ignition', specialValue: 'Нормално пали', tags: ['ТЕШКО ПАЛИ', 'НЕ ПАЛИ', 'ТРОПА ПРИ ПАЛЕЊЕ'] },
+          { id: 20, cat: 'EXTERIOR', title: '20. Мотор - Работа', subtitle: 'Нестандардни звуци и тропање', status: null, comment: '', tags: ['НЕРАМНОМЕРНА РАБОТА', 'ТРОПАЊЕ', 'ЧАДИ'] },
+          { id: 21, cat: 'EXTERIOR', title: '21. Тест возење & Менувач', subtitle: 'Кочење, дискови, предница', status: null, comment: '', tags: ['ТРОПА ПРЕДНИЦА', 'КРЧИ МЕНУВАЧ', 'СЛАБИ КОЧНИЦИ'] },
+          { id: 22, cat: 'EXTERIOR', title: '22. Кабли за полнење', subtitle: 'За EV / Hybrid возила', status: null, comment: '', tags: ['НЕМА КАБЕЛ', 'ОШТЕТЕН КАБЕЛ'] },
+          { id: 23, cat: 'EXTERIOR', title: '23. Ајдучки клуч', subtitle: 'Клуч за тркала', status: null, comment: '', tags: ['НЕМА', 'ОШТЕТЕН'] },
+          { id: 24, cat: 'EXTERIOR', title: '24. Даска / Ролетна во гепек', subtitle: 'Присутна и исправна', status: null, comment: '', tags: ['НЕМА', 'ОШТЕТЕНА'] },
+          { id: 25, cat: 'EXTERIOR', title: '25. Наслони за глава', subtitle: 'Сите наслони во кабина', status: null, comment: '', tags: ['ФАЛИ НАСЛОН', 'ОШТЕТЕН'] },
+          { id: 26, cat: 'EXTERIOR', title: '26. Резервна Гума / Сет', subtitle: 'Опрема за дефект', status: null, comment: '', specialType: 'spare_wheel', specialValue: 'Резервна гума', tags: ['ПРАЗНА', 'НЕМА СЕТ', 'ФАЛИ КОМПРЕСОР'] },
+          { id: 27, cat: 'EXTERIOR', title: '27. Дизалица', subtitle: 'Состојба и присутност', status: null, comment: '', tags: ['НЕМА', 'ОШТЕТЕНА'] },
+
+          // INTERIOR ITEMS (28 - 42)
+          { id: 28, cat: 'INTERIOR', title: '28. Седишта', subtitle: 'Предни и задни седишта', status: null, comment: '', tags: ['СКОРНАНО', 'ИЗГОРЕНО ОД ЦИГАРА', 'ФЛЕКИ'] },
+          { id: 29, cat: 'INTERIOR', title: '29. Екрани', subtitle: 'Централен дисплеј и табла', status: null, comment: '', tags: ['НЕ РАБОТИ', 'ИЗГРЕБАН', 'МРТВИ ПИКСЕЛИ'] },
+          { id: 30, cat: 'INTERIOR', title: '30. Панели, Копчиња, Пластики', subtitle: 'Општа состојба во кабина', status: null, comment: '', tags: ['ИЗНОСЕНИ КОПЧИЊА', 'СКРШЕНА ПЛАСТИКА', 'ОШТЕТЕНИ ВРАТИ'] },
+          { id: 31, cat: 'INTERIOR', title: '31. Таван', subtitle: 'Небо / Тапацир', status: null, comment: '', tags: ['ODLEPEN', 'ФЛЕКИ', 'ИЗГОРЕНО'] },
+          { id: 32, cat: 'INTERIOR', title: '32. Сончев кров', subtitle: 'Стакло, механизам, дефект', status: null, comment: '', tags: ['НЕ СЕ ОТВОРА', 'ПРОТЕКУВА', 'СКРШЕНО МЕХАНИЗАМ'] },
+          { id: 33, cat: 'INTERIOR', title: '33. Резервен Клуч', subtitle: 'Број на клучеви', status: null, comment: '', specialType: 'spare_key', specialValue: '1 Клуч', tags: ['БЕЗ ДАЛЕЧИНСКО', 'ОШТЕТЕН КЛУЧ'] },
+          { id: 34, cat: 'INTERIOR', title: '34. Навигација', subtitle: 'Мапи, SD Картичка', status: null, comment: '', tags: ['НЕМА SD КАРТИЧКА', 'НЕ РАБОТАТ МАПИТЕ'] },
+          { id: 35, cat: 'INTERIOR', title: '35. Влага / Мувла', subtitle: 'Мирис или влага под теписи', status: null, comment: '', tags: ['МИРИС НА ВЛАГА', 'МОКРИ ТЕПИСИ', 'МУВЛА'] },
+          { id: 36, cat: 'INTERIOR', title: '36. Warning Lights на табла', subtitle: 'Check Engine, Airbag, etc.', status: null, comment: '', tags: ['CHECK ENGINE', 'AIRBAG', 'ABS / ESP', 'SERVICE'] },
+          { id: 37, cat: 'INTERIOR', title: '37. Паркинг Камера', subtitle: 'Задна / 360 камера', status: null, comment: '', tags: ['НЕ РАБОТИ', 'МАТНА СЛИКА'] },
+          { id: 38, cat: 'INTERIOR', title: '38. Клима Уред', subtitle: 'Ладење и греење', status: null, comment: '', tags: ['НЕ ЛАДИ', 'СЛАБО ДУВА', 'НЕ ГРЕЕ'] },
+          { id: 39, cat: 'INTERIOR', title: '39. Километража', subtitle: 'Запис на км', status: null, comment: '', specialType: 'odometer', specialValue: '', tags: ['СУМНИТЕЛНА', 'НЕ СВЕТИ ДИСПЛЕЈ'] },
+          { id: 40, cat: 'INTERIOR', title: '40. Антени', subtitle: 'Прием и куќиште', status: null, comment: '', tags: ['ФАЛИ АНТЕНА', 'СКРШЕНА'] },
+          { id: 41, cat: 'INTERIOR', title: '41. Радио / Звук', subtitle: 'Звучници и аудио', status: null, comment: '', tags: ['НЕ РАБОТИ ЗВУЧНИК', 'КРЧИ', 'НЕМА БЛУТУТ'] },
+          { id: 42, cat: 'INTERIOR', title: '42. ОПРЕМА', subtitle: 'Триаголник, прва помош, елеци', status: null, comment: '', tags: ['НЕМА ПРВА ПОМОШ', 'НЕМА ТРИАГОЛНИК', 'ФАЛИ ЕЛЕК'] }
+        ]
+      }
+    },
+
+    computed: {
+      filteredChecklist() {
+        if (this.activeCategory === 'EXTERIOR') return this.checklist.filter(i => i.cat === 'EXTERIOR');
+        if (this.activeCategory === 'INTERIOR') return this.checklist.filter(i => i.cat === 'INTERIOR');
+        if (this.activeCategory === 'DEFECTS') return this.checklist.filter(i => i.status === 'NOT_OK');
+        if (this.activeCategory === 'PASSED') return this.checklist.filter(i => i.status === 'OK');
+        return this.checklist;
+      }
+    },
+
+    methods: {
+      openMetadataModal() {
+        this.showMetadataModal = true;
+      },
+
+      setStatus(item, status) {
+        item.status = status;
+        this.saveDraft();
+      },
+
+      addTagToComment(item, tag) {
+        if (item.comment && !item.comment.endsWith(' ')) {
+          item.comment += ', ';
+        }
+        item.comment += tag;
+        this.saveDraft();
+      },
+
+      getCategoryCount(catId) {
+        if (catId === 'EXTERIOR') return this.checklist.filter(i => i.cat === 'EXTERIOR').length;
+        if (catId === 'INTERIOR') return this.checklist.filter(i => i.cat === 'INTERIOR').length;
+        if (catId === 'DEFECTS') return this.checklist.filter(i => i.status === 'NOT_OK').length;
+        if (catId === 'PASSED') return this.checklist.filter(i => i.status === 'OK').length;
+        return this.checklist.length;
+      },
+
+      saveDraft() {
+        const draft = {
+          metadata: this.metadata,
+          checklist: this.checklist
+        };
+        localStorage.setItem('autocheck_current_draft', JSON.stringify(draft));
+      },
+
+      saveInspection() {
+        if (!this.metadata.brandModel) {
+          alert('Ве молиме внесете Марка и Модел на возилото пред зачувување!');
+          this.openMetadataModal();
+          return;
+        }
+
+        const report = {
+          date: new Date().toLocaleString('mk-MK'),
+          metadata: { ...this.metadata },
+          checklist: JSON.parse(JSON.stringify(this.checklist))
+        };
+
+        this.savedReports.unshift(report);
+        localStorage.setItem('autocheck_reports', JSON.stringify(this.savedReports));
+        alert('Извештајот е успешно зачуван во архивата!');
+      },
+
+      loadReport(report) {
+        this.metadata = { ...report.metadata };
+        this.checklist = JSON.parse(JSON.stringify(report.checklist));
+        this.showArchive = false;
+      },
+
+      deleteReport(index) {
+        if (confirm('Дали сте сигурни дека сакате да го избришете овој извештај?')) {
+          this.savedReports.splice(index, 1);
+          localStorage.setItem('autocheck_reports', JSON.stringify(this.savedReports));
+        }
+      },
+
+      triggerPrint() {
+        window.print();
+      }
+    },
+
+    mounted() {
+      // Auto-load draft if exists
+      const savedDraft = localStorage.getItem('autocheck_current_draft');
+      if (savedDraft) {
+        try {
+          const parsed = JSON.parse(savedDraft);
+          if (parsed.metadata) this.metadata = parsed.metadata;
+          if (parsed.checklist) this.checklist = parsed.checklist;
+        } catch(e) {}
+      }
+    }
+  }).mount('#app');
+</script>
+</body>
+</html>
