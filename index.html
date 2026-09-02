@@ -423,7 +423,7 @@
                 </button>
 
                 <!-- Clear Button -->
-                <button v-if="item.status" @click="clearItemStatus(item)" title="Исчисти статус"
+                <button v-if="item.status" @click="clearItemStatus(item)" title="Ресетирај"
                   class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs transition-all active:scale-95">
                   <i class="fa-solid fa-rotate-left"></i>
                 </button>
@@ -1230,7 +1230,7 @@
 
         const clearItemStatus = (item) => {
           item.status = null;
-          item.comment = '';
+          item.comment = ''; // Clears the defect comment & quick tag chips text
           saveDraft();
         };
 
