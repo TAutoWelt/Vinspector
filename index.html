@@ -876,12 +876,12 @@
               printData.vehicle.vin || 'Н/А' }}</strong></div>
           <div><span class="text-slate-500">Регистарски број:</span> <strong>{{ printData.vehicle.plate || 'Н/А'
               }}</strong></div>
-          <div><span class="text-slate-500">Километража:</span> <strong>{{ printData.specialValues[39] ?
-              formatKm(printData.specialValues[39]) : 'Н/А' }}</strong></div>
+          <div><span class="text-slate-500">Километража:</span> <strong>{{ printData.specialValues[40] ?
+              formatKm(printData.specialValues[40]) : 'Н/А' }}</strong></div>
           <div><span class="text-slate-500">Боја:</span> <strong>{{ printData.vehicle.color || 'Н/А' }}</strong></div>
           <div><span class="text-slate-500">Тип на бандажи:</span> <strong>{{ printData.specialValues[8] || 'Н/А'
               }}</strong></div>
-          <div><span class="text-slate-500">Број на клучеви:</span> <strong>{{ printData.specialValues[33] || 'Н/А'
+          <div><span class="text-slate-500">Број на клучеви:</span> <strong>{{ printData.specialValues[34] || 'Н/А'
               }}</strong></div>
         </div>
         <div v-if="printData.vehicle.generalNotes" class="mt-2 pt-2 border-t border-slate-200 text-xs">
@@ -916,14 +916,15 @@
         </div>
 
         <div v-else class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 font-medium">
-          Возилото е детално прегледано во сите 42 точки и нема забележано оштетувања или технички неправилности.
+          Возилото е детално прегледано во сите {{ printData.items ? printData.items.length : 45 }} точки и нема
+          забележано оштетувања или технички неправилности.
         </div>
       </div>
 
-      <!-- 42-Point Complete Checklist Grid Table -->
+      <!-- Complete Checklist Grid Table -->
       <div class="mb-6">
         <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700 mb-2 border-b border-slate-200 pb-1">3.
-          Комплетна листа на 42 контролни точки</h4>
+          Комплетна листа на {{ printData.items ? printData.items.length : 45 }} контролни точки</h4>
         <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
           <div v-for="item in printData.items" :key="'print_all_' + item.id"
             class="flex items-center justify-between py-1 border-b border-slate-100">
@@ -962,9 +963,9 @@
 
     createApp({
       setup() {
-        // 42 Standard Vehicle Inspection Points (as per specification)
+        // Standard Vehicle Inspection Points (1 - 45)
         const items = ref([
-          // EXTERIOR (1 - 27)
+          // EXTERIOR (1 - 28)
           { id: 1, category: 'EXTERIOR', title: 'Проверка Течности', subtitle: 'Масло, Антифриз, Гориво, Течност за бришачи', status: null, comment: '', photos: [] },
           { id: 2, category: 'EXTERIOR', title: 'Акумулатор', subtitle: 'Состојба на клеми, напон и прицврстеност', status: null, comment: '', photos: [] },
           { id: 3, category: 'EXTERIOR', title: 'Преден Браник', subtitle: 'Оштетувања, гребнатини, боја и спојки', status: null, comment: '', photos: [] },
@@ -976,50 +977,51 @@
           { id: 9, category: 'EXTERIOR', title: 'Преглед на гуми', subtitle: 'Длабочина на шара, рамномерно трошење, DOT', status: null, comment: '', photos: [] },
           { id: 10, category: 'EXTERIOR', title: 'Прагови', subtitle: 'Лева и десна страна, вдлабнатини и рѓа', status: null, comment: '', photos: [] },
           { id: 11, category: 'EXTERIOR', title: 'Врати (Сите 4 врати)', subtitle: 'Отворање, затворање, брави, гребнатини и дихтунзи', status: null, comment: '', photos: [] },
-          { id: 12, category: 'EXTERIOR', title: 'Гепек (Задна врата)', subtitle: 'Амортизери, отворање, централно заклучување', status: null, comment: '', photos: [] },
-          { id: 13, category: 'EXTERIOR', title: 'Ретровизори', subtitle: 'Лево и десно стакло, куќиште, електрично преклопување', status: null, comment: '', photos: [] },
-          { id: 14, category: 'EXTERIOR', title: 'Странични Стакла', subtitle: 'Предни и задни стакла, механизми за спуштање', status: null, comment: '', photos: [] },
-          { id: 15, category: 'EXTERIOR', title: 'Заден Браник', subtitle: 'Оштетувања, капачиња, дифлектори, спојки', status: null, comment: '', photos: [] },
-          { id: 16, category: 'EXTERIOR', title: 'Задно стакло', subtitle: 'Греачи за одмаглување и заден бришач', status: null, comment: '', photos: [] },
-          { id: 17, category: 'EXTERIOR', title: 'Задни Штопови / Магленки', subtitle: 'Пукнатини, оштетувања + Влага во куќиште', status: null, comment: '', photos: [] },
-          { id: 18, category: 'EXTERIOR', title: 'Паркинг сензори', subtitle: 'Предни и задни сензори - визуелно и функција', status: null, comment: '', photos: [] },
-          { id: 19, category: 'EXTERIOR', title: 'ПАЛЕЊЕ', subtitle: 'Начин на палење и стартна способност', status: null, comment: '', photos: [], specialType: 'ignition' },
-          { id: 20, category: 'EXTERIOR', title: 'Мотор - Работа', subtitle: 'Нестандардни звуци, тропање, чад и вибрации', status: null, comment: '', photos: [] },
-          { id: 21, category: 'EXTERIOR', title: 'Тест возење & Менувач', subtitle: 'Кочење, дискови, предница, амортизација, менување брзини', status: null, comment: '', photos: [] },
-          { id: 22, category: 'EXTERIOR', title: 'Кабли за полнење', subtitle: 'За електрични / Plug-in хибридни возила', status: null, comment: '', photos: [] },
-          { id: 23, category: 'EXTERIOR', title: 'Ајдучки клуч', subtitle: 'Клуч за одвртување на тркала и сигурносен шраф', status: null, comment: '', photos: [] },
-          { id: 24, category: 'EXTERIOR', title: 'Даска / Ролетна во гепек', subtitle: 'Присутност, механизми и сочуваност', status: null, comment: '', photos: [] },
-          { id: 25, category: 'EXTERIOR', title: 'Наслони за глава', subtitle: 'Предни и задни наслони - присутност и состојба', status: null, comment: '', photos: [] },
-          { id: 26, category: 'EXTERIOR', title: 'Резервна Гума / Сет', subtitle: 'Резервно тркало или компресор сет за лепење', status: null, comment: '', photos: [], specialType: 'spare_wheel' },
-          { id: 27, category: 'EXTERIOR', title: 'Дизалица', subtitle: 'Присутна оригинална дизалица и рачка', status: null, comment: '', photos: [] },
+          { id: 12, category: 'EXTERIOR', title: 'Крила', subtitle: 'Предни и задни крила, оштетувања, гребнатини и рѓа', status: null, comment: '', photos: [] },
+          { id: 13, category: 'EXTERIOR', title: 'Гепек (Задна врата)', subtitle: 'Амортизери, отворање, централно заклучување', status: null, comment: '', photos: [] },
+          { id: 14, category: 'EXTERIOR', title: 'Ретровизори', subtitle: 'Лево и десно стакло, куќиште, електрично преклопување', status: null, comment: '', photos: [] },
+          { id: 15, category: 'EXTERIOR', title: 'Странични Стакла', subtitle: 'Предни и задни стакла, механизми за спуштање', status: null, comment: '', photos: [] },
+          { id: 16, category: 'EXTERIOR', title: 'Заден Браник', subtitle: 'Оштетувања, капачиња, дифлектори, спојки', status: null, comment: '', photos: [] },
+          { id: 17, category: 'EXTERIOR', title: 'Задно стакло', subtitle: 'Греачи за одмаглување и заден бришач', status: null, comment: '', photos: [] },
+          { id: 18, category: 'EXTERIOR', title: 'Задни Штопови / Магленки', subtitle: 'Пукнатини, оштетувања + Влага во куќиште', status: null, comment: '', photos: [] },
+          { id: 19, category: 'EXTERIOR', title: 'Паркинг сензори', subtitle: 'Предни и задни сензори - визуелно и функција', status: null, comment: '', photos: [] },
+          { id: 20, category: 'EXTERIOR', title: 'ПАЛЕЊЕ', subtitle: 'Начин на палење и стартна способност', status: null, comment: '', photos: [], specialType: 'ignition' },
+          { id: 21, category: 'EXTERIOR', title: 'Мотор - Работа', subtitle: 'Нестандардни звуци, тропање, чад и вибрации', status: null, comment: '', photos: [] },
+          { id: 22, category: 'EXTERIOR', title: 'Тест возење & Менувач', subtitle: 'Кочење, дискови, предница, амортизација, менување брзини', status: null, comment: '', photos: [] },
+          { id: 23, category: 'EXTERIOR', title: 'Кабли за полнење', subtitle: 'За електрични / Plug-in хибридни возила', status: null, comment: '', photos: [] },
+          { id: 24, category: 'EXTERIOR', title: 'Ајдучки клуч', subtitle: 'Клуч за одвртување на тркала и сигурносен шраф', status: null, comment: '', photos: [] },
+          { id: 25, category: 'EXTERIOR', title: 'Даска / Ролетна во гепек', subtitle: 'Присутност, механизми и сочуваност', status: null, comment: '', photos: [] },
+          { id: 26, category: 'EXTERIOR', title: 'Наслони за глава', subtitle: 'Предни и задни наслони - присутност и состојба', status: null, comment: '', photos: [] },
+          { id: 27, category: 'EXTERIOR', title: 'Резервна Гума / Сет', subtitle: 'Резервно тркало или компресор сет за лепење', status: null, comment: '', photos: [], specialType: 'spare_wheel' },
+          { id: 28, category: 'EXTERIOR', title: 'Дизалица', subtitle: 'Присутна оригинална дизалица и рачка', status: null, comment: '', photos: [] },
 
-          // INTERIOR (28 - 42)
-          { id: 28, category: 'INTERIOR', title: 'Седишта', subtitle: 'Предни и задни седишта, механизми, греачи, тапацир', status: null, comment: '', photos: [] },
-          { id: 29, category: 'INTERIOR', title: 'Екрани', subtitle: 'Централен инфотејнмент дисплеј и дигитална табла', status: null, comment: '', photos: [] },
-          { id: 30, category: 'INTERIOR', title: 'Панели, Копчиња, Пластики', subtitle: 'Истрошеност на копчиња, волан, рачка за менувач', status: null, comment: '', photos: [] },
-          { id: 31, category: 'INTERIOR', title: 'Таван (Небо / Тапацир)', subtitle: 'Чистота, одлепување, дамки од пушење или влага', status: null, comment: '', photos: [] },
-          { id: 32, category: 'INTERIOR', title: 'Сончев кров (Шибер)', subtitle: 'Стакло, механизам за отворање, водопропусност', status: null, comment: '', photos: [] },
-          { id: 33, category: 'INTERIOR', title: 'Резервен Клуч', subtitle: 'Број на присутни клучеви и далечинско', status: null, comment: '', photos: [], specialType: 'keys' },
-          { id: 34, category: 'INTERIOR', title: 'Навигација', subtitle: 'Фабричка навигација, SD Картичка со мапи', status: null, comment: '', photos: [] },
-          { id: 35, category: 'INTERIOR', title: 'Влага / Мувла', subtitle: 'Мирис во кабина или влага под патосници/теписи', status: null, comment: '', photos: [] },
-          { id: 36, category: 'INTERIOR', title: 'Warning Lights на табла', subtitle: 'Check Engine, Airbag, ABS, Сервисен клуч и сл.', status: null, comment: '', photos: [] },
-          { id: 37, category: 'INTERIOR', title: 'Паркинг Камера', subtitle: 'Задна камера / 360 степени камери - чиста слика', status: null, comment: '', photos: [] },
-          { id: 38, category: 'INTERIOR', title: 'Клима Уред', subtitle: 'Ефикасност на ладење (климатрон) и греење', status: null, comment: '', photos: [] },
-          { id: 39, category: 'INTERIOR', title: 'Километража', subtitle: 'Запис на точната состојба на километри', status: null, comment: '', photos: [], specialType: 'odometer' },
-          { id: 40, category: 'INTERIOR', title: 'Антени', subtitle: 'Радио антена, GPS перка на кров', status: null, comment: '', photos: [] },
-          { id: 41, category: 'INTERIOR', title: 'Радио / Звук', subtitle: 'Звучници, Bluetooth конекција, USB порти', status: null, comment: '', photos: [] },
-          { id: 42, category: 'INTERIOR', title: 'ОПРЕМА', subtitle: 'Сигурносен триаголник, прва помош, флуоресцентен елек', status: null, comment: '', photos: [] },
-          { id: 43, category: 'INTERIOR', title: 'КУКА', subtitle: 'Сигурносен триаголник, прва помош, флуоресцентен елек', status: null, comment: '', photos: [] },
-          { id: 44, category: 'INTERIOR', title: 'ВОЛАН', subtitle: 'Сигурносен триаголник, прва помош, флуоресцентен елек', status: null, comment: '', photos: [] }
+          // INTERIOR (29 - 45)
+          { id: 29, category: 'INTERIOR', title: 'Седишта', subtitle: 'Предни и задни седишта, механизми, греачи, тапацир', status: null, comment: '', photos: [] },
+          { id: 30, category: 'INTERIOR', title: 'Екрани', subtitle: 'Централен инфотејнмент дисплеј и дигитална табла', status: null, comment: '', photos: [] },
+          { id: 31, category: 'INTERIOR', title: 'Панели, Копчиња, Пластики', subtitle: 'Истрошеност на копчиња, волан, рачка за менувач', status: null, comment: '', photos: [] },
+          { id: 32, category: 'INTERIOR', title: 'Таван (Небо / Тапацир)', subtitle: 'Чистота, одлепување, дамки од пушење или влага', status: null, comment: '', photos: [] },
+          { id: 33, category: 'INTERIOR', title: 'Сончев кров (Шибер)', subtitle: 'Стакло, механизам за отворање, водопропусност', status: null, comment: '', photos: [] },
+          { id: 34, category: 'INTERIOR', title: 'Резервен Клуч', subtitle: 'Број на присутни клучеви и далечинско', status: null, comment: '', photos: [], specialType: 'keys' },
+          { id: 35, category: 'INTERIOR', title: 'Навигација', subtitle: 'Фабричка навигација, SD Картичка со мапи', status: null, comment: '', photos: [] },
+          { id: 36, category: 'INTERIOR', title: 'Влага / Мувла', subtitle: 'Мирис во кабина или влага под патосници/теписи', status: null, comment: '', photos: [] },
+          { id: 37, category: 'INTERIOR', title: 'Warning Lights на табла', subtitle: 'Check Engine, Airbag, ABS, Сервисен клуч и сл.', status: null, comment: '', photos: [] },
+          { id: 38, category: 'INTERIOR', title: 'Паркинг Камера', subtitle: 'Задна камера / 360 степени камери - чиста слика', status: null, comment: '', photos: [] },
+          { id: 39, category: 'INTERIOR', title: 'Клима Уред', subtitle: 'Ефикасност на ладење (климатрон) и греење', status: null, comment: '', photos: [] },
+          { id: 40, category: 'INTERIOR', title: 'Километража', subtitle: 'Запис на точната состојба на километри', status: null, comment: '', photos: [], specialType: 'odometer' },
+          { id: 41, category: 'INTERIOR', title: 'Антени', subtitle: 'Радио антена, GPS перка на кров', status: null, comment: '', photos: [] },
+          { id: 42, category: 'INTERIOR', title: 'Радио / Звук', subtitle: 'Звучници, Bluetooth конекција, USB порти', status: null, comment: '', photos: [] },
+          { id: 43, category: 'INTERIOR', title: 'ОПРЕМА', subtitle: 'Сигурносен триаголник, прва помош, флуоресцентен елек', status: null, comment: '', photos: [] },
+          { id: 44, category: 'INTERIOR', title: 'КУКА', subtitle: 'Присутност, исправност и тип на кука за влечење', status: null, comment: '', photos: [] },
+          { id: 45, category: 'INTERIOR', title: 'ВОЛАН', subtitle: 'Состојба на кожа, истрошеност и команди на волан', status: null, comment: '', photos: [] }
         ]);
 
-        // Specialized values dictionary (e.g. { 8: 'ALU (Алуминиумски)', 19: 'Нормално пали', ... })
+        // Specialized values dictionary (e.g. { 8: 'ALU (Алуминиумски)', 20: 'Нормално пали', ... })
         const specialValues = ref({
           8: 'ALU (Алуминиумски)',
-          19: 'Нормално пали',
-          26: 'Резервна гума (Тркало)',
-          33: '2 Клуча',
-          39: ''
+          20: 'Нормално пали',
+          27: 'Резервна гума (Тркало)',
+          34: '2 Клуча',
+          40: ''
         });
 
         // Vehicle Metadata
@@ -1113,108 +1115,107 @@
           // 11. Врати
           11: ['ЛЕВА', 'ДЕСНА', 'ПРЕДНА', 'ЗАДНА', 'ВНАТРЕШНА СТРАНА!', 'ДУПЧИЊА', 'ИЗГРЕБАНО', 'НАБИЕНО', 'РЃА',],
 
-          //           
           // 12. Крила
-          // 12: ['ЛЕВO','ДЕСНО','НАПРЕД','НАЗАД','ИЗГРЕБАНО','НАБИЕНО','РЃА',],
+          12: ['ЛЕВO', 'ДЕСНО', 'НАПРЕД', 'НАЗАД', 'ИЗГРЕБАНО', 'НАБИЕНО', 'РЃА'],
 
-          // 12. Гепек (Задна врата)
-          12: ['СЛАБИ АМОРТИЗЕРИ НА ГЕПЕК', 'ДУПЧИЊА', 'ИЗГРЕБАНО', 'НЕ РАБОТИ ЕЛЕКТРИКА', 'СЛАБИ АМОРТИЗЕРИ', 'НЕМА СИГУРНОСЕН ТРИАГОЛНИК', 'НЕМА СЕТ ПРВА ПОМОШ', 'НЕМА ФЛУОРЕСЦЕНТЕН ЕЛЕК'],
+          // 13. Гепек (Задна врата)
+          13: ['СЛАБИ АМОРТИЗЕРИ НА ГЕПЕК', 'ДУПЧИЊА', 'ИЗГРЕБАНО', 'НЕ РАБОТИ ЕЛЕКТРИКА', 'СЛАБИ АМОРТИЗЕРИ', 'НЕМА СИГУРНОСЕН ТРИАГОЛНИК', 'НЕМА СЕТ ПРВА ПОМОШ', 'НЕМА ФЛУОРЕСЦЕНТЕН ЕЛЕК'],
 
-          // 13. Ретровизори (Куќиште + Стакло)
-          13: ['ИЗГРЕБАН', 'ПУКНАТО СТАКЛО', 'НЕ РАБОТИ ЕЛ. ПРЕКЛОПУВАЊЕ', 'НЕ РАБОТИ ГРЕАЧ НА СТАКЛО', 'СКРШЕН ЖМИГАВЕЦ НА РЕТРОВИЗОР'],
+          // 14. Ретровизори (Куќиште + Стакло)
+          14: ['ИЗГРЕБАН', 'ПУКНАТО СТАКЛО', 'НЕ РАБОТИ ЕЛ. ПРЕКЛОПУВАЊЕ', 'НЕ РАБОТИ ГРЕАЧ НА СТАКЛО', 'СКРШЕН ЖМИГАВЕЦ НА РЕТРОВИЗОР'],
 
-          // 14. Странични Стакла
-          14: ['ЛЕВО', 'ДЕСНО', 'ПРЕДНО', 'ЗАДНО', 'НЕ СЕ ДИГА/СПУШТА', 'ПУКНАТО', 'СКРШЕНО'],
+          // 15. Странични Стакла
+          15: ['ЛЕВО', 'ДЕСНО', 'ПРЕДНО', 'ЗАДНО', 'НЕ СЕ ДИГА/СПУШТА', 'ПУКНАТО', 'СКРШЕНО'],
 
-          // 15. Заден Браник
-          15: ['ЛЕВО', 'ДЕСНО', 'ИЗГРЕБАН', 'ПУКНАТ', 'НЕМА КАПАЧЕ', 'ОТКАЧЕН ОД ЖАБИЦИ', 'КАТАДИОПТЕР'],
+          // 16. Заден Браник
+          16: ['ЛЕВО', 'ДЕСНО', 'ИЗГРЕБАН', 'ПУКНАТ', 'НЕМА КАПАЧЕ', 'ОТКАЧЕН ОД ЖАБИЦИ', 'КАТАДИОПТЕР'],
 
-          // 16. Задно стакло
-          16: ['ДУПЧЕ', 'ПУКНАТИНА НА СТАКЛО',],
+          // 17. Задно стакло
+          17: ['ДУПЧЕ', 'ПУКНАТИНА НА СТАКЛО'],
 
-          // 17. Задни Штопови / Магленки
-          17: ['ВЛАГА / КОНДЕНЗАЦИЈА', 'ПУКНАТА ПЛАСТИКА / СТАКЛО', 'НЕ СВЕТАТ СТОП СВЕТЛА', 'НЕ СВЕТИ ЗАДНА МАГЛЕНКА',],
+          // 18. Задни Штопови / Магленки
+          18: ['ВЛАГА / КОНДЕНЗАЦИЈА', 'ПУКНАТА ПЛАСТИКА / СТАКЛО', 'НЕ СВЕТАТ СТОП СВЕТЛА', 'НЕ СВЕТИ ЗАДНА МАГЛЕНКА'],
 
-          // 18. Паркинг сензори
-          18: ['НЕ РАБОТАТ ПРЕДНИ СЕНЗОРИ', 'НЕ РАБОТАТ ЗАДНИ СЕНЗОРИ'],
+          // 19. Паркинг сензори
+          19: ['НЕ РАБОТАТ ПРЕДНИ СЕНЗОРИ', 'НЕ РАБОТАТ ЗАДНИ СЕНЗОРИ'],
 
-          // 19. ПАЛЕЊЕ
-          19: ['ТЕШКО ПАЛИ', 'ТРОПАЊЕ ПРИ ПАЛЕЊЕ'],
+          // 20. ПАЛЕЊЕ
+          20: ['ТЕШКО ПАЛИ', 'ТРОПАЊЕ ПРИ ПАЛЕЊЕ'],
 
-          // 20. Мотор - Работа
-          20: ['ТРОПА', 'СИЛНИ ВИБРАЦИИ (ДРЖАЧИ)', 'ЧАД ОД АУСПУХ', 'ШУМ ОД КАИШ/ЗАТЕГАЧ'],
+          // 21. Мотор - Работа
+          21: ['ТРОПА', 'СИЛНИ ВИБРАЦИИ (ДРЖАЧИ)', 'ЧАД ОД АУСПУХ', 'ШУМ ОД КАИШ/ЗАТЕГАЧ'],
 
-          // 21. Тест возење & Менувач
-          21: ['ТРОПА ПРЕДНИЦА', 'ТРЕСЕ ПРИ КОЧЕЊЕ', 'ТРОПАЊЕ ВО ЗАМАЕЦ', 'ТЕШКО МЕНУВА БРЗИНИ', 'ВЛЕЧЕ НА ЕДНА СТРАНА', 'ЛУФТА ВО ВОЛАН'],
+          // 22. Тест возење & Менувач
+          22: ['ТРОПА ПРЕДНИЦА', 'ТРЕСЕ ПРИ КОЧЕЊЕ', 'ТРОПАЊЕ ВО ЗАМАЕЦ', 'ТЕШКО МЕНУВА БРЗИНИ', 'ВЛЕЧЕ НА ЕДНА СТРАНА', 'ЛУФТА ВО ВОЛАН'],
 
-          // 22. Кабли за полнење
-          22: ['НЕДОСТИГА КАБЕЛ'],
+          // 23. Кабли за полнење
+          23: ['НЕДОСТИГА КАБЕЛ'],
 
-          // 23. Ајдучки клуч
-          23: ['НЕМА'],
+          // 24. Ајдучки клуч
+          24: ['НЕМА'],
 
-          // 24. Даска / Ролетна во гепек
-          24: ['НЕДОСТИГА РОЛЕТНА / ДАСКА', 'ОШТЕТЕНА ДАСКА'],
+          // 25. Даска / Ролетна во гепек
+          25: ['НЕДОСТИГА РОЛЕТНА / ДАСКА', 'ОШТЕТЕНА ДАСКА'],
 
-          // 25. Наслони за глава
-          25: ['НЕДОСТИГА НАСЛОН'],
+          // 26. Наслони за глава
+          26: ['НЕДОСТИГА НАСЛОН'],
 
-          // 26. Резервна Гума / Сет
-          26: ['НЕДОСТИГА РЕЗЕРВНО ТРКАЛО', 'НЕДОСТИГА КОМПРЕСОР', 'НЕДОСТИГА ПЕНА'],
+          // 27. Резервна Гума / Сет
+          27: ['НЕДОСТИГА РЕЗЕРВНО ТРКАЛО', 'НЕДОСТИГА КОМПРЕСОР', 'НЕДОСТИГА ПЕНА'],
 
-          // 27. Дизалица
-          27: ['НЕМА ДИЗАЛИЦА', 'НЕДОСТИГА ШТРАФ/КУКА ЗА ВЛЕЧЕЊЕ'],
+          // 28. Дизалица
+          28: ['НЕМА ДИЗАЛИЦА', 'НЕДОСТИГА ШТРАФ/КУКА ЗА ВЛЕЧЕЊЕ'],
 
-          // 28. Седишта
-          28: ['ЛЕВО', 'ДЕСНО', 'ПРЕДНО', 'ЗАДНО', 'ОШТЕТЕН ТАПАЦИР', 'ФЛЕКИ', 'НЕ РАБОТИ ЕЛ. ПОДЕСУВАЊЕ', 'ДУПЧЕ (ИЗГОРЕНО)'],
+          // 29. Седишта
+          29: ['ЛЕВО', 'ДЕСНО', 'ПРЕДНО', 'ЗАДНО', 'ОШТЕТЕН ТАПАЦИР', 'ФЛЕКИ', 'НЕ РАБОТИ ЕЛ. ПОДЕСУВАЊЕ', 'ДУПЧЕ (ИЗГОРЕНО)'],
 
-          // 29. Екрани
-          29: ['ИЗГРЕБАН ЕКРАН', 'НЕ РАБОТИ TOUCH SCREEN', 'ОШТЕТУВАЊЕ'],
+          // 30. Екрани
+          30: ['ИЗГРЕБАН ЕКРАН', 'НЕ РАБОТИ TOUCH SCREEN', 'ОШТЕТУВАЊЕ'],
 
-          // 30. Панели, Копчиња, Пластики
-          30: ['СКРШЕНИ КОПЧИЊА', 'ОШТЕТЕНИ ВЕНТИЛАЦИИ', 'РАЧКА НА МЕНУВАЧ', 'СКРШЕНА ПЛАСТИКА НА ВРАТА'],
+          // 31. Панели, Копчиња, Пластики
+          31: ['СКРШЕНИ КОПЧИЊА', 'ОШТЕТЕНИ ВЕНТИЛАЦИИ', 'РАЧКА НА МЕНУВАЧ', 'СКРШЕНА ПЛАСТИКА НА ВРАТА'],
 
-          // 31. Таван (Небо / Тапацир)
-          31: ['ОШТЕТЕН ТАПАЦИР', 'ГАДНО', 'ДАМКИ ОД ВЛАГА / ВОДА',],
+          // 32. Таван (Небо / Тапацир)
+          32: ['ОШТЕТЕН ТАПАЦИР', 'ГАДНО', 'ДАМКИ ОД ВЛАГА / ВОДА'],
 
-          // 32. Сончев кров (Шибер)
-          32: ['НЕ СЕ ОТВОРА / ЗАГЛАВУВА', 'ТЕЧЕ ВОДА', 'ОШТЕТЕНА ЗАШТИТНА РОЛЕТНА'],
+          // 33. Сончев кров (Шибер)
+          33: ['НЕ СЕ ОТВОРА / ЗАГЛАВУВА', 'ТЕЧЕ ВОДА', 'ОШТЕТЕНА ЗАШТИТНА РОЛЕТНА'],
 
-          // 33. Резервен Клуч
-          33: ['1 КЛУЧ', '2 КЛУЧА', 'ОШТЕТЕН КЛУЧ'],
+          // 34. Резервен Клуч
+          34: ['1 КЛУЧ', '2 КЛУЧА', 'ОШТЕТЕН КЛУЧ'],
 
-          // 34. Навигација
-          34: ['НЕМА НАВИГАЦИЈА', 'ИМА НАВИГАЦИЈА НЕМА МАПИ / КАРТИЧКА'],
+          // 35. Навигација
+          35: ['НЕМА НАВИГАЦИЈА', 'ИМА НАВИГАЦИЈА НЕМА МАПИ / КАРТИЧКА'],
 
-          // 35. Влага / Мувла
-          35: ['НА СЕДИШТА', 'НА ТАВАН', 'НА ПАТОСНИЦИ'],
+          // 36. Влага / Мувла
+          36: ['НА СЕДИШТА', 'НА ТАВАН', 'НА ПАТОСНИЦИ'],
 
-          // 36. Warning Lights на табла
-          36: ['CHECK ENGINE', 'AIRBAG', 'ABS', 'ГУМИ', 'ПОРАКА ЗА СЕРВИС'],
+          // 37. Warning Lights на табла
+          37: ['CHECK ENGINE', 'AIRBAG', 'ABS', 'ГУМИ', 'ПОРАКА ЗА СЕРВИС'],
 
-          // 37. Паркинг Камера
-          37: ['НЕМА', 'ДЕФЕКТ', 'МАТНА СЛИКА', 'НЕСЕ ВКЛУЧУВА'],
+          // 38. Паркинг Камера
+          38: ['НЕМА', 'ДЕФЕКТ', 'МАТНА СЛИКА', 'НЕСЕ ВКЛУЧУВА'],
 
-          // 38. Клима Уред
-          38: ['НЕ ЛАДИ ВООПШТО', 'СЛАБО ЛАДИ'],
+          // 39. Клима Уред
+          39: ['НЕ ЛАДИ ВООПШТО', 'СЛАБО ЛАДИ'],
 
-          // 39. Километража
-          39: ['НЕ СЕ СОВПАЃА', 'РАЗЛИКА ДО 100km', '+ 100km', '+ 200km', '+300 km', '+ 400 km'],
+          // 40. Километража
+          40: ['НЕ СЕ СОВПАЃА', 'РАЗЛИКА ДО 100km', '+ 100km', '+ 200km', '+300 km', '+ 400 km'],
 
-          // 40. Антени
-          40: ['НЕМА АНТЕНА', 'СКРШЕНА'],
+          // 41. Антени
+          41: ['НЕМА АНТЕНА', 'СКРШЕНА'],
 
-          // 41. Радио / Звук
-          41: ['НЕМА ЗВУК', 'ПРОБЛЕМ СО ЗВУЧНИЦИ', 'КОДИРАНО (LOCKED)'],
+          // 42. Радио / Звук
+          42: ['НЕМА ЗВУК', 'ПРОБЛЕМ СО ЗВУЧНИЦИ', 'КОДИРАНО (LOCKED)'],
 
-          // 42. ОПРЕМА
-          42: ['НЕ СЕ СОВПАЃА'],
+          // 43. ОПРЕМА
+          43: ['НЕ СЕ СОВПАЃА'],
 
-          // 43. КУКА
-          43: ['НЕМА', 'ДЕФЕКТ',],
+          // 44. КУКА
+          44: ['НЕМА', 'ДЕФЕКТ'],
 
-          // 44. ВОЛАН
-          44: ['ОШТЕТАНА КОЖА']
+          // 45. ВОЛАН
+          45: ['ОШТЕТАНА КОЖА']
         };
 
         const getTagsForItem = (item) => {
