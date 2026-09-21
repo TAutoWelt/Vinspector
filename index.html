@@ -1052,6 +1052,7 @@
           { id: 43, category: 'INTERIOR', title: 'ОПРЕМА', subtitle: 'Сигурносен триаголник, прва помош, флуоресцентен елек', status: null, comment: '', photos: [] },
           { id: 44, category: 'INTERIOR', title: 'КУКА', subtitle: 'Присутност, исправност и тип на кука за влечење', status: null, comment: '', photos: [] },
           { id: 45, category: 'INTERIOR', title: 'ВОЛАН', subtitle: 'Состојба на кожа, истрошеност и команди на волан', status: null, comment: '', photos: [] }
+          { id: 46, category: '',         title: 'ОСТАНАТИ ЗАБЕЛЕШКИ', subtitle: 'Останати забелешки кои не се опфатени', status: null, comment: '', photos: [] }
         ]);
 
         // Specialized values dictionary (e.g. { 8: 'ALU (Алуминиумски)', 20: 'Нормално пали', ... })
@@ -1256,7 +1257,10 @@
           44: ['НЕМА', 'ДЕФЕКТ'],
 
           // 45. ВОЛАН
-          45: ['ОШТЕТАНА КОЖА']
+          45: ['ОШТЕТАНА КОЖА'],
+
+          // 46. ОСТАНАТИ ЗАБЕЛЕШКИ
+          46: ['ОСТАНАТИ ЗАБЕЛЕШКИ']
         };
 
         const getTagsForItem = (item) => {
