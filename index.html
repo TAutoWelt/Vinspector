@@ -403,6 +403,13 @@
             <i class="fa-solid fa-plus text-[11px]"></i>
             <span>Нова точка</span>
           </button>
+
+          <button v-if="manageMode" @click="exportInspectionPoints"
+            class="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold border border-emerald-200 rounded-full transition-all active:scale-95 flex items-center gap-1 text-xs"
+            title="Преземи го JSON фајлот за да го зачуваш во репозиториумот">
+            <i class="fa-solid fa-download text-[11px]"></i>
+            <span>Експортирај точки</span>
+          </button>
         </div>
       </div>
 
@@ -1096,63 +1103,9 @@
 
     createApp({
       setup() {
-        // Standard Vehicle Inspection Points (1 - 45)
-        const items = ref([
-          // EXTERIOR (1 - 28)
-          { id: 1, category: 'EXTERIOR', title: 'Проверка Течности', subtitle: 'Масло, Антифриз, Гориво, Течност за бришачи', status: null, comment: '', photos: [] },
-          { id: 2, category: 'EXTERIOR', title: 'Акумулатор', subtitle: 'Состојба на клеми, напон и прицврстеност', status: null, comment: '', photos: [] },
-          { id: 3, category: 'EXTERIOR', title: 'Преден Браник', subtitle: 'Оштетувања, гребнатини, боја и спојки', status: null, comment: '', photos: [] },
-          { id: 4, category: 'EXTERIOR', title: 'Фарови', subtitle: 'Оштетени стакла, замагленост + Влага внатре', status: null, comment: '', photos: [] },
-          { id: 5, category: 'EXTERIOR', title: 'Хауба', subtitle: 'Линија на спојување, отворање/затворање, удари', status: null, comment: '', photos: [] },
-          { id: 6, category: 'EXTERIOR', title: 'Шофершајбна', subtitle: 'Камчиња, пукнатини и гребнатини од бришачи', status: null, comment: '', photos: [] },
-          { id: 7, category: 'EXTERIOR', title: 'Кров', subtitle: 'Вдлабнатини од град, гребнатини и шини за багажник', status: null, comment: '', photos: [] },
-          { id: 8, category: 'EXTERIOR', title: 'Тркала / Бандажи', subtitle: 'Тип на бандажи, оштетувања по рабовите', status: null, comment: '', photos: [], specialType: 'wheels' },
-          { id: 9, category: 'EXTERIOR', title: 'Преглед на гуми', subtitle: 'Длабочина на шара, рамномерно трошење, DOT', status: null, comment: '', photos: [] },
-          { id: 10, category: 'EXTERIOR', title: 'Прагови', subtitle: 'Лева и десна страна, вдлабнатини и рѓа', status: null, comment: '', photos: [] },
-          { id: 11, category: 'EXTERIOR', title: 'Врати (Сите 4 врати)', subtitle: 'Отворање, затворање, брави, гребнатини и дихтунзи', status: null, comment: '', photos: [] },
-          { id: 12, category: 'EXTERIOR', title: 'Крила', subtitle: 'Предни и задни крила, оштетувања, гребнатини и рѓа', status: null, comment: '', photos: [] },
-          { id: 13, category: 'EXTERIOR', title: 'Гепек (Задна врата)', subtitle: 'Амортизери, отворање, централно заклучување', status: null, comment: '', photos: [] },
-          { id: 14, category: 'EXTERIOR', title: 'Ретровизори', subtitle: 'Лево и десно стакло, куќиште, електрично преклопување', status: null, comment: '', photos: [] },
-          { id: 15, category: 'EXTERIOR', title: 'Странични Стакла', subtitle: 'Предни и задни стакла, механизми за спуштање', status: null, comment: '', photos: [] },
-          { id: 16, category: 'EXTERIOR', title: 'Заден Браник', subtitle: 'Оштетувања, капачиња, дифлектори, спојки', status: null, comment: '', photos: [] },
-          { id: 17, category: 'EXTERIOR', title: 'Задно стакло', subtitle: 'Греачи за одмаглување и заден бришач', status: null, comment: '', photos: [] },
-          { id: 18, category: 'EXTERIOR', title: 'Задни Штопови / Магленки', subtitle: 'Пукнатини, оштетувања + Влага во куќиште', status: null, comment: '', photos: [] },
-          { id: 19, category: 'EXTERIOR', title: 'Паркинг сензори', subtitle: 'Предни и задни сензори - визуелно и функција', status: null, comment: '', photos: [] },
-          { id: 20, category: 'EXTERIOR', title: 'ПАЛЕЊЕ', subtitle: 'Начин на палење и стартна способност', status: null, comment: '', photos: [], specialType: 'ignition' },
-          { id: 21, category: 'EXTERIOR', title: 'Мотор - Работа', subtitle: 'Нестандардни звуци, тропање, чад и вибрации', status: null, comment: '', photos: [] },
-          { id: 22, category: 'EXTERIOR', title: 'Тест возење & Менувач', subtitle: 'Кочење, дискови, предница, амортизација, менување брзини', status: null, comment: '', photos: [] },
-          { id: 23, category: 'EXTERIOR', title: 'Кабли за полнење', subtitle: 'За електрични / Plug-in хибридни возила', status: null, comment: '', photos: [] },
-          { id: 24, category: 'EXTERIOR', title: 'Ајдучки клуч', subtitle: 'Клуч за одвртување на тркала и сигурносен шраф', status: null, comment: '', photos: [] },
-          { id: 25, category: 'EXTERIOR', title: 'Даска / Ролетна во гепек', subtitle: 'Присутност, механизми и сочуваност', status: null, comment: '', photos: [] },
-          { id: 26, category: 'EXTERIOR', title: 'Наслони за глава', subtitle: 'Предни и задни наслони - присутност и состојба', status: null, comment: '', photos: [] },
-          { id: 27, category: 'EXTERIOR', title: 'Резервна Гума / Сет', subtitle: 'Резервно тркало или компресор сет за лепење', status: null, comment: '', photos: [], specialType: 'spare_wheel' },
-          { id: 28, category: 'EXTERIOR', title: 'Дизалица', subtitle: 'Присутна оригинална дизалица и рачка', status: null, comment: '', photos: [] },
-
-          // INTERIOR (29 - 45)
-          { id: 29, category: 'INTERIOR', title: 'Седишта', subtitle: 'Предни и задни седишта, механизми, греачи, тапацир', status: null, comment: '', photos: [] },
-          { id: 30, category: 'INTERIOR', title: 'Екрани', subtitle: 'Централен инфотејнмент дисплеј и дигитална табла', status: null, comment: '', photos: [] },
-          { id: 31, category: 'INTERIOR', title: 'Панели, Копчиња, Пластики', subtitle: 'Истрошеност на копчиња, волан, рачка за менувач', status: null, comment: '', photos: [] },
-          { id: 32, category: 'INTERIOR', title: 'Таван (Небо / Тапацир)', subtitle: 'Чистота, одлепување, дамки од пушење или влага', status: null, comment: '', photos: [] },
-          { id: 33, category: 'INTERIOR', title: 'Сончев кров (Шибер)', subtitle: 'Стакло, механизам за отворање, водопропусност', status: null, comment: '', photos: [] },
-          { id: 34, category: 'INTERIOR', title: 'Резервен Клуч', subtitle: 'Број на присутни клучеви и далечинско', status: null, comment: '', photos: [], specialType: 'keys' },
-          { id: 35, category: 'INTERIOR', title: 'Навигација', subtitle: 'Фабричка навигација, SD Картичка со мапи', status: null, comment: '', photos: [] },
-          { id: 36, category: 'INTERIOR', title: 'Влага / Мувла', subtitle: 'Мирис во кабина или влага под патосници/теписи', status: null, comment: '', photos: [] },
-          { id: 37, category: 'INTERIOR', title: 'Warning Lights на табла', subtitle: 'Check Engine, Airbag, ABS, Сервисен клуч и сл.', status: null, comment: '', photos: [] },
-          { id: 38, category: 'INTERIOR', title: 'Паркинг Камера', subtitle: 'Задна камера / 360 степени камери - чиста слика', status: null, comment: '', photos: [] },
-          { id: 39, category: 'INTERIOR', title: 'Клима Уред', subtitle: 'Ефикасност на ладење (климатрон) и греење', status: null, comment: '', photos: [] },
-          { id: 40, category: 'INTERIOR', title: 'Километража', subtitle: 'Запис на точната состојба на километри', status: null, comment: '', photos: [], specialType: 'odometer' },
-          { id: 41, category: 'INTERIOR', title: 'Антени', subtitle: 'Радио антена, GPS перка на кров', status: null, comment: '', photos: [] },
-          { id: 42, category: 'INTERIOR', title: 'Радио / Звук', subtitle: 'Звучници, Bluetooth конекција, USB порти', status: null, comment: '', photos: [] },
-          { id: 43, category: 'INTERIOR', title: 'ОПРЕМА', subtitle: 'Сигурносен триаголник, прва помош, флуоресцентен елек', status: null, comment: '', photos: [] },
-          { id: 44, category: 'INTERIOR', title: 'КУКА', subtitle: 'Присутност, исправност и тип на кука за влечење', status: null, comment: '', photos: [] },
-          { id: 45, category: 'INTERIOR', title: 'ВОЛАН', subtitle: 'Состојба на кожа, истрошеност и команди на волан', status: null, comment: '', photos: [] },
-          { id: 46, category: '',         title: 'ОСТАНАТИ ЗАБЕЛЕШКИ', subtitle: 'Останати забелешки кои не се опфатени', status: null, comment: '', photos: [] }
-        ]);
-
-        items.value.forEach(item => {
-          item.key = `point-${item.id}`;
-        });
-        const initialItems = JSON.parse(JSON.stringify(items.value));
+        // Point definitions are loaded from the committed inspection-points.json file.
+        const items = ref([]);
+        const initialItems = ref([]);
 
         // Specialized values are keyed by stable point keys, never display numbers.
         const specialValues = ref({
@@ -1367,7 +1320,7 @@
         };
 
         const getTagsForItem = (item) => {
-          return itemTagSuggestions[item.id] || item.tags || ['ИЗГРЕБАНО', 'ПУКНАТО', 'НЕ РАБОТИ', 'ОШТЕТЕНО', 'НЕДОСТИГА', 'ПОТРЕБЕН СЕРВИС'];
+          return item.tags?.length ? item.tags : itemTagSuggestions[item.id] || ['ИЗГРЕБАНО', 'ПУКНАТО', 'НЕ РАБОТИ', 'ОШТЕТЕНО', 'НЕДОСТИГА', 'ПОТРЕБЕН СЕРВИС'];
         };
 
         // Actions
@@ -1525,7 +1478,7 @@
         };
 
         const resetForm = () => {
-          items.value = JSON.parse(JSON.stringify(initialItems));
+          items.value = JSON.parse(JSON.stringify(initialItems.value));
           specialValues.value = {
             'point-8': 'ALU (Алуминиумски)',
             'point-20': 'Нормално пали',
@@ -1556,9 +1509,30 @@
         };
 
         // LocalStorage Persistence
+        const loadInspectionPoints = async () => {
+          try {
+            const response = await fetch('inspection-points.json', { cache: 'no-store' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const definitions = await response.json();
+            if (!Array.isArray(definitions) || definitions.length === 0) throw new Error('Invalid point configuration');
+
+            items.value = definitions.map((definition, index) => ({
+              ...definition,
+              key: definition.key || `point-${definition.id || index + 1}`,
+              status: null,
+              comment: '',
+              photos: []
+            }));
+            initialItems.value = JSON.parse(JSON.stringify(items.value));
+          } catch (error) {
+            console.error('Error loading inspection-points.json:', error);
+            showToast('Не може да се вчита inspection-points.json', 'fa-solid fa-triangle-exclamation', '#DC2626');
+          }
+        };
+
         const saveDraft = () => {
           const draft = {
-            schemaVersion: 2,
+            schemaVersion: 3,
             vehicle: vehicle.value,
             items: items.value,
             specialValues: specialValues.value,
@@ -1577,7 +1551,7 @@
           if (!raw) return;
           try {
             const draft = JSON.parse(raw);
-            if (draft.schemaVersion !== 2) {
+            if (draft.schemaVersion !== 3) {
               localStorage.removeItem('autocheck_current_draft');
               showToast('Старата работна верзија е ресетирана поради новиот систем на точки', 'fa-solid fa-rotate-left', '#D97706');
               return;
@@ -1585,7 +1559,14 @@
             if (draft.vehicle) vehicle.value = { ...vehicle.value, ...draft.vehicle };
             if (draft.specialValues) specialValues.value = { ...specialValues.value, ...draft.specialValues };
             if (draft.items && Array.isArray(draft.items)) {
-              items.value = draft.items;
+              const savedByKey = new Map(draft.items.map(item => [item.key, item]));
+              const configuredKeys = new Set(items.value.map(item => item.key));
+              items.value = items.value.map(item => {
+                const saved = savedByKey.get(item.key);
+                return saved ? { ...item, status: saved.status || null, comment: saved.comment || '', photos: saved.photos || [] } : item;
+              });
+              const customItems = draft.items.filter(item => !configuredKeys.has(item.key));
+              items.value.push(...customItems);
             }
             draftLastSaved.value = new Date(draft.savedAt);
           } catch (e) {
@@ -1598,7 +1579,7 @@
           if (raw) {
             try {
               const reports = JSON.parse(raw);
-              if (!Array.isArray(reports) || reports.some(report => report.schemaVersion !== 2)) {
+              if (!Array.isArray(reports) || reports.some(report => report.schemaVersion !== 3)) {
                 localStorage.removeItem('autocheck_reports');
                 savedReports.value = [];
                 showToast('Старата архива е ресетирана поради новиот систем на точки', 'fa-solid fa-rotate-left', '#D97706');
@@ -1617,7 +1598,7 @@
           const oks = items.value.filter(i => i.status === 'OK');
 
           const report = {
-            schemaVersion: 2,
+            schemaVersion: 3,
             id: reportId,
             savedAt: new Date().toISOString(),
             savedAtDate: new Date().toLocaleDateString('mk-MK'),
@@ -1660,6 +1641,21 @@
           dlAnchor.setAttribute("href", dataStr);
           dlAnchor.setAttribute("download", `autocheck_reports_backup_${todayDate}.json`);
           dlAnchor.click();
+        };
+
+        const exportInspectionPoints = () => {
+          const definitions = items.value.map(({ key, id, category, title, subtitle, specialType, tags }) => {
+            const definition = { key, ...(id ? { id } : {}), category, title, subtitle };
+            if (specialType) definition.specialType = specialType;
+            definition.tags = getTagsForItem({ id, tags });
+            return definition;
+          });
+          const data = JSON.stringify(definitions, null, 2);
+          const download = document.createElement('a');
+          download.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(data);
+          download.download = 'inspection-points.json';
+          download.click();
+          showToast('Точките се експортирани како inspection-points.json', 'fa-solid fa-download', '#059669');
         };
 
         // Print handling
@@ -1737,7 +1733,8 @@
         const evaluatedCount = computed(() => items.value.filter(i => i.status !== null).length);
         const progressPercent = computed(() => Math.round((evaluatedCount.value / items.value.length) * 100));
 
-        onMounted(() => {
+        onMounted(async () => {
+          await loadInspectionPoints();
           loadSavedReports();
           loadDraft();
         });
@@ -1790,6 +1787,7 @@
           loadReportFromArchive,
           deleteReportFromArchive,
           exportReportsBackup,
+          exportInspectionPoints,
           openPrintPreview,
           printArchivedReport,
           formatKm,
