@@ -1278,7 +1278,7 @@
         const addTagToComment = (item, tag) => {
           if (!item.comment) {
             item.comment = tag;
-          } else if (!item.comment.includes(tag)) {
+          } else {
             item.comment = item.comment.trim() + ', ' + tag;
           }
           saveDraft();
