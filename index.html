@@ -13,51 +13,14 @@
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Built Tailwind CSS -->
+  <link rel="stylesheet" href="dist/output.css">
 
   <!-- FontAwesome 6 Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Vue 3 CDN -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-          },
-          colors: {
-            ios: {
-              bg: '#F2F2F7',
-              card: '#FFFFFF',
-              border: '#E2E8F0',
-              text: '#0F172A',
-              muted: '#64748B',
-              red: '#DC2626',
-              redLight: '#FEF2F2',
-              redBorder: '#FECACA',
-              green: '#059669',
-              greenLight: '#ECFDF5',
-              greenBorder: '#A7F3D0',
-              blue: '#2563EB',
-              blueLight: '#EFF6FF',
-              amber: '#D97706',
-              amberLight: '#FFFBEB'
-            }
-          },
-          boxShadow: {
-            'ios-sm': '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
-            'ios': '0 4px 14px 0 rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.03)',
-            'ios-lg': '0 10px 25px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.03)',
-            'ios-sheet': '0 -8px 30px rgba(0, 0, 0, 0.12)'
-          }
-        }
-      }
-    }
-  </script>
 
   <style>
     /* Custom iOS Scrollbar & styling */
@@ -1262,24 +1225,62 @@
           saveDraft();
         };
 
-        const handlePhotoUpload = (event, item) => {
+        const compressImage = (file) => new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = () => reject(new Error('Не може да се прочита сликата'));
+          reader.onload = () => {
+            const image = new Image();
+            image.onerror = () => reject(new Error('Не може да се обработи сликата'));
+            image.onload = () => {
+              const MAX_DIMENSION = 1280;
+              const scale = Math.min(1, MAX_DIMENSION / Math.max(image.width, image.height));
+              const width = Math.max(1, Math.round(image.width * scale));
+              const height = Math.max(1, Math.round(image.height * scale));
+              const canvas = document.createElement('canvas');
+              canvas.width = width;
+              canvas.height = height;
+              const context = canvas.getContext('2d');
+              if (!context) {
+                reject(new Error('Не може да се подготви сликата'));
+                return;
+              }
+              context.drawImage(image, 0, 0, width, height);
+              resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            image.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        });
+
+        const handlePhotoUpload = async (event, item) => {
           const files = event.target.files;
           if (!files || files.length === 0) return;
 
           if (!item.photos) item.photos = [];
 
-          Array.from(files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              item.photos.push(e.target.result);
-              saveDraft();
-            };
-            reader.readAsDataURL(file);
-          });
-
-          // Reset file input
+          const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
           event.target.value = '';
-          showToast('Фотографијата е успешно прикачена', 'fa-solid fa-camera', '#059669');
+          if (imageFiles.length === 0) {
+            showToast('Изберете валидна слика', 'fa-solid fa-circle-exclamation', '#DC2626');
+            return;
+          }
+
+          let uploaded = 0;
+          for (const file of imageFiles) {
+            try {
+              item.photos.push(await compressImage(file));
+              uploaded++;
+              await saveDraft();
+            } catch (error) {
+              console.error('Image compression failed:', error);
+            }
+          }
+
+          if (uploaded > 0) {
+            showToast(`${uploaded} фотографија е компресирана и прикачена`, 'fa-solid fa-camera', '#059669');
+          } else {
+            showToast('Фотографијата не може да се обработи', 'fa-solid fa-triangle-exclamation', '#DC2626');
+          }
         };
 
         const removePhoto = (item, idx) => {
@@ -1327,7 +1328,7 @@
             date: todayDate,
             generalNotes: ''
           };
-          localStorage.removeItem('autocheck_current_draft');
+          deleteStoredValue('autocheck_current_draft').catch(error => console.error('Draft reset failed:', error));
           draftLastSaved.value = null;
         };
 
@@ -1337,7 +1338,55 @@
           showToast('Податоците за возилото се зачувани', 'fa-solid fa-check', '#059669');
         };
 
-        // LocalStorage Persistence
+        // IndexedDB persistence keeps photos and report archives outside the small localStorage quota.
+        const storageDb = new Promise((resolve, reject) => {
+          const request = indexedDB.open('autocheck_storage', 1);
+          request.onupgradeneeded = () => request.result.createObjectStore('values', { keyPath: 'key' });
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+
+        const readStoredValue = async (key) => {
+          const db = await storageDb;
+          return new Promise((resolve, reject) => {
+            const request = db.transaction('values', 'readonly').objectStore('values').get(key);
+            request.onsuccess = () => resolve(request.result?.value ?? null);
+            request.onerror = () => reject(request.error);
+          });
+        };
+
+        const writeStoredValue = async (key, value) => {
+          const db = await storageDb;
+          return new Promise((resolve, reject) => {
+            const request = db.transaction('values', 'readwrite').objectStore('values').put({ key, value });
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+          });
+        };
+
+        const deleteStoredValue = async (key) => {
+          const db = await storageDb;
+          return new Promise((resolve, reject) => {
+            const request = db.transaction('values', 'readwrite').objectStore('values').delete(key);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+          });
+        };
+
+        const migrateLegacyStorage = async () => {
+          const migrationKey = 'autocheck_storage_migrated_v1';
+          if (await readStoredValue(migrationKey)) return;
+
+          for (const key of ['autocheck_current_draft', 'autocheck_reports']) {
+            const raw = localStorage.getItem(key);
+            if (raw) await writeStoredValue(key, JSON.parse(raw));
+          }
+
+          await writeStoredValue(migrationKey, true);
+          localStorage.removeItem('autocheck_current_draft');
+          localStorage.removeItem('autocheck_reports');
+        };
+
         const loadInspectionPoints = async () => {
           try {
             const response = await fetch('inspection-points.json', { cache: 'no-store' });
@@ -1359,7 +1408,7 @@
           }
         };
 
-        const saveDraft = () => {
+        const saveDraft = async () => {
           const draft = {
             schemaVersion: 4,
             vehicle: vehicle.value,
@@ -1368,20 +1417,20 @@
             savedAt: new Date().toISOString()
           };
           try {
-            localStorage.setItem('autocheck_current_draft', JSON.stringify(draft));
+            await writeStoredValue('autocheck_current_draft', draft);
             draftLastSaved.value = new Date();
           } catch (e) {
-            console.warn('Draft save quota reached (photos may be large)', e);
+            console.error('Draft save failed:', e);
+            showToast('Не може да се зачува работната верзија', 'fa-solid fa-triangle-exclamation', '#DC2626');
           }
         };
 
-        const loadDraft = () => {
-          const raw = localStorage.getItem('autocheck_current_draft');
-          if (!raw) return;
+        const loadDraft = async () => {
           try {
-            const draft = JSON.parse(raw);
+            const draft = await readStoredValue('autocheck_current_draft');
+            if (!draft) return;
             if (draft.schemaVersion !== 4) {
-              localStorage.removeItem('autocheck_current_draft');
+              await deleteStoredValue('autocheck_current_draft');
               showToast('Старата работна верзија е ресетирана поради новиот систем на точки', 'fa-solid fa-rotate-left', '#D97706');
               return;
             }
@@ -1400,24 +1449,25 @@
             draftLastSaved.value = new Date(draft.savedAt);
           } catch (e) {
             console.error('Error loading draft:', e);
+            showToast('Не може да се вчита работната верзија', 'fa-solid fa-triangle-exclamation', '#DC2626');
           }
         };
 
-        const loadSavedReports = () => {
-          const raw = localStorage.getItem('autocheck_reports');
-          if (raw) {
-            try {
-              const reports = JSON.parse(raw);
-              if (!Array.isArray(reports) || reports.some(report => report.schemaVersion !== 3)) {
-                localStorage.removeItem('autocheck_reports');
-                savedReports.value = [];
-                showToast('Старата архива е ресетирана поради новиот систем на точки', 'fa-solid fa-rotate-left', '#D97706');
-              } else {
-                savedReports.value = reports;
-              }
-            } catch (e) {
+        const loadSavedReports = async () => {
+          try {
+            const reports = await readStoredValue('autocheck_reports');
+            if (!reports) return;
+            if (!Array.isArray(reports) || reports.some(report => report.schemaVersion !== 3)) {
+              await deleteStoredValue('autocheck_reports');
               savedReports.value = [];
+              showToast('Старата архива е ресетирана поради новиот систем на точки', 'fa-solid fa-rotate-left', '#D97706');
+            } else {
+              savedReports.value = reports;
             }
+          } catch (e) {
+            savedReports.value = [];
+            console.error('Error loading saved reports:', e);
+            showToast('Не може да се вчита архивата', 'fa-solid fa-triangle-exclamation', '#DC2626');
           }
         };
 
@@ -1448,7 +1498,7 @@
           return false;
         };
 
-        const saveReportToArchive = () => {
+        const saveReportToArchive = async () => {
           if (!validateRequiredVehicleFields()) return;
 
           const reportId = 'AC-' + Date.now().toString().slice(-6);
@@ -1469,8 +1519,14 @@
           };
 
           savedReports.value.unshift(report);
-          localStorage.setItem('autocheck_reports', JSON.stringify(savedReports.value));
-          showToast(`Извештајот за ${vehicle.value.brand || 'возилото'} е зачуван во архива!`, 'fa-solid fa-floppy-disk', '#059669');
+          try {
+            await writeStoredValue('autocheck_reports', savedReports.value);
+            showToast(`Извештајот за ${vehicle.value.brand || 'возилото'} е зачуван во архива!`, 'fa-solid fa-floppy-disk', '#059669');
+          } catch (error) {
+            savedReports.value.shift();
+            console.error('Report save failed:', error);
+            showToast('Не може да се зачува извештајот', 'fa-solid fa-triangle-exclamation', '#DC2626');
+          }
         };
 
         const loadReportFromArchive = (rep) => {
@@ -1488,8 +1544,12 @@
         const deleteReportFromArchive = (idx) => {
           if (confirm('Дали сакате трајно да го избришете овој извештај од архивата?')) {
             savedReports.value.splice(idx, 1);
-            localStorage.setItem('autocheck_reports', JSON.stringify(savedReports.value));
-            showToast('Извештајот е избришан', 'fa-solid fa-trash', '#EF4444');
+            writeStoredValue('autocheck_reports', savedReports.value)
+              .then(() => showToast('Извештајот е избришан', 'fa-solid fa-trash', '#EF4444'))
+              .catch(error => {
+                console.error('Report delete failed:', error);
+                showToast('Не може да се ажурира архивата', 'fa-solid fa-triangle-exclamation', '#DC2626');
+              });
           }
         };
 
@@ -1597,9 +1657,15 @@
         const progressPercent = computed(() => Math.round((evaluatedCount.value / items.value.length) * 100));
 
         onMounted(async () => {
-          await loadInspectionPoints();
-          loadSavedReports();
-          loadDraft();
+          try {
+            await migrateLegacyStorage();
+            await loadInspectionPoints();
+            await loadSavedReports();
+            await loadDraft();
+          } catch (error) {
+            console.error('Storage initialization failed:', error);
+            showToast('Складирањето не е достапно во овој прелистувач', 'fa-solid fa-triangle-exclamation', '#DC2626');
+          }
         });
 
         return {

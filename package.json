@@ -1,0 +1,11 @@
+{
+  "name": "autowelt-inspector",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
+    "build": "npm run build:css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

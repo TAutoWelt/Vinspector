@@ -26,7 +26,7 @@ Typography: Google Sans ('Google Sans', 'Google Sans Text', 'Plus Jakarta Sans')
 
 Iconography: FontAwesome 6 Free Web Icons
 
-Data Persistence: Web Storage API (localStorage for offline draft auto-saves and report archives)
+Data Persistence: IndexedDB for offline draft auto-saves and report archives, with one-time migration from the legacy localStorage keys
 
 Print Engine: CSS @media print rules targeting custom printable DOM modals
 
@@ -81,7 +81,7 @@ Each card represents a distinct vehicle component or system:
 * **Defect Detail Drawer (Triggered on NOT OK):**
   * **Smart Defect Tag Chips:** Contextual 1-tap quick tags based on item type (e.g., *ИЗГРЕБАНО, ПУКНАТО, ВЛАГА, НЕ РАБОТИ*). Tapping appends tag to comment text field.
   * **Comment Text Field:** Multi-line text field for additional observations.
-  * **Photo Uploader:** Supports attaching images directly via device camera or photo picker with base64 client-side previews and deletion capability.
+  * **Photo Uploader:** Supports attaching images directly via device camera or photo picker. Images are resized to a maximum 1280px dimension and compressed to JPEG before being stored as previews.
 
 ### 4.3 Specialized Item Controls
 Certain inspection points render specialized quick selectors:
@@ -92,9 +92,9 @@ Certain inspection points render specialized quick selectors:
 * **Километража:** Numeric entry input for current odometer reading in kilometers.
 
 ### 4.4 Report Archiving & Persistence
-* **Draft Auto-Save:** Automatically persists current form state into `localStorage.autocheck_current_draft` on every status change or comment edit.
+* **Draft Auto-Save:** Automatically persists current form state into IndexedDB on every status change or comment edit.
 * **Report Archiving:**
-  * **`Зачувај го извештајот` Button:** Compiles current vehicle metadata, checklist states, defect notes, photo arrays, and timestamps into `localStorage.autocheck_reports`.
+  * **`Зачувај го извештајот` Button:** Compiles current vehicle metadata, checklist states, defect notes, photo arrays, and timestamps into the IndexedDB report archive.
   * **Archive Drawer:** Lists past saved inspections. Supports loading archived reports into active editor or deleting records.
 * **Form Reset:** Clears active inputs with user confirmation dialog.
 
