@@ -1432,8 +1432,24 @@
           return false;
         };
 
+        const validateRequiredVehicleFields = () => {
+          const requiredFields = [
+            ['brand', 'марка на возило'],
+            ['model', 'модел'],
+            ['vin', 'VIN'],
+            ['inspector', 'инспектор']
+          ];
+          const missingField = requiredFields.find(([field]) => !String(vehicle.value[field] ?? '').trim());
+
+          if (!missingField) return true;
+
+          showVehicleModal.value = true;
+          showToast(`Внесете ${missingField[1]} пред да продолжите`, 'fa-solid fa-triangle-exclamation', '#D97706');
+          return false;
+        };
+
         const saveReportToArchive = () => {
-          validateRequiredSpecialValues();
+          if (!validateRequiredVehicleFields()) return;
 
           const reportId = 'AC-' + Date.now().toString().slice(-6);
           const defects = items.value.filter(i => i.status === 'NOT_OK');
@@ -1503,6 +1519,7 @@
 
         // Print handling
         const openPrintPreview = () => {
+          if (!validateRequiredVehicleFields()) return;
           if (!validateRequiredSpecialValues()) return;
 
           printData.value = {
