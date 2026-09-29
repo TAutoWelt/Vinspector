@@ -6,27 +6,27 @@ Target Platform: Web Browsers (Mobile-First / Desktop Responsive)
 
 Primary Language: Macedonian (mk)
 
-Design Paradigm: Apple iOS Light Theme & Google Sans Typography System
+Design Paradigm: Apple iOS Light Theme & Plus Jakarta Sans Typography System
 
 ## 1. Executive Summary
 
 AutoWeltInspector is a web-based vehicle inspection and condition tracking application for car importers, dealerships, and field inspectors in North Macedonia. It streamlines the multi-point quality check required when receiving and preparing imported used or new vehicles.
 
-The application replaces paper checklists with a responsive browser-based inspection workflow. Inspectors can evaluate the 53 checklist points plus an uncategorized notes point, record defects and photos, enter vehicle metadata, save an active draft, archive reports, and print a report or save it as PDF through the browser. The app requires its external CDN dependencies and an HTTP server for the JSON catalog; it does not provide guaranteed offline operation.
+The application replaces paper checklists with a responsive browser-based inspection workflow. Inspectors can evaluate the 53 checklist points plus an uncategorized notes point, record defects and photos, enter vehicle metadata, save an active draft, archive reports, and print a report or save it as PDF through the browser. Runtime assets are served locally, and the catalog is fetched from the app's HTTP origin. The app does not provide guaranteed offline operation.
 
 ## 2. Technology Stack & System Architecture
 
 ### 2.1 Core Stack
 
-Frontend Framework: Vue 3 Composition API (`createApp` and `setup`) loaded from a CDN; the app is inline in `index.html` and has no build step
+Frontend Framework: Vue 3 Composition API (`createApp` and `setup`) runtime copied locally from the pinned npm dependency; application logic is inline in `index.html`
 
 Styling Framework: Tailwind CSS v3, compiled locally with the Tailwind CLI
 
-CSS Build: Run `npm install` and `npm run build:css` to generate `tailwind.css` from `tailwind.input.css` using `tailwind.config.js`.
+Asset Build: Run `npm install` and `npm run build` to generate `tailwind.css` and copy the pinned Vue, Font Awesome, and Fontsource assets to `vendor/` for static hosting.
 
-Typography: Google Sans ('Google Sans', 'Google Sans Text', 'Plus Jakarta Sans')
+Typography: Self-hosted Plus Jakarta Sans and Inter from Fontsource
 
-Iconography: FontAwesome 6 Free Web Icons
+Iconography: Self-hosted Font Awesome 6 Free Web Icons
 
 Data Persistence: Web Storage API (`localStorage` for browser-local draft auto-saves and report archives)
 
@@ -39,7 +39,7 @@ Print Engine: CSS @media print rules targeting custom printable DOM modals
 * Five walkaround sections are displayed in catalog order. The first four map to `EXTERIOR`; `ЕНТЕРИЕР` maps to `INTERIOR`. The filters remain `СИТЕ`, `Надворешно`, `Внатрешно`, `NOT OK`, and `OK`.
 * The uncategorized “ОСТАНАТИ ЗАБЕЛЕШКИ” point follows the five sections and is excluded from Exterior/Interior category filters and counts. It remains eligible for the `NOT OK` and `OK` status filters when marked.
 * The current draft and report archive are stored separately in browser `localStorage`, scoped to the app's origin. Photos are stored as data URLs and consume browser storage quota.
-* Tailwind utilities are compiled into the local `tailwind.css` file. Vue, Font Awesome, and fonts still load from external CDNs, and the catalog is fetched from the server; use the app through an HTTP server with those dependencies available. There is no service worker or bundled offline dependency cache.
+* Tailwind utilities are compiled into `tailwind.css`; Vue, Font Awesome, and the required font subsets are copied into `vendor/`. Runtime assets and `inspection-points.json` use relative paths, including when hosted under a GitHub Pages project subpath. There are no third-party runtime CDN requests. There is no service worker, so previously uncached pages are not guaranteed to work offline.
 
 ---
 
