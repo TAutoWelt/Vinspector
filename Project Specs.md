@@ -20,7 +20,9 @@ The application replaces paper checklists with a responsive browser-based inspec
 
 Frontend Framework: Vue 3 Composition API (`createApp` and `setup`) loaded from a CDN; the app is inline in `index.html` and has no build step
 
-Styling Framework: Tailwind CSS (Utility-first framework via CDN)
+Styling Framework: Tailwind CSS v3, compiled locally with the Tailwind CLI
+
+CSS Build: Run `npm install` and `npm run build:css` to generate `tailwind.css` from `tailwind.input.css` using `tailwind.config.js`.
 
 Typography: Google Sans ('Google Sans', 'Google Sans Text', 'Plus Jakarta Sans')
 
@@ -37,7 +39,7 @@ Print Engine: CSS @media print rules targeting custom printable DOM modals
 * Five walkaround sections are displayed in catalog order. The first four map to `EXTERIOR`; `ЕНТЕРИЕР` maps to `INTERIOR`. The filters remain `СИТЕ`, `Надворешно`, `Внатрешно`, `NOT OK`, and `OK`.
 * The uncategorized “ОСТАНАТИ ЗАБЕЛЕШКИ” point follows the five sections and is excluded from Exterior/Interior category filters and counts. It remains eligible for the `NOT OK` and `OK` status filters when marked.
 * The current draft and report archive are stored separately in browser `localStorage`, scoped to the app's origin. Photos are stored as data URLs and consume browser storage quota.
-* The project has no service worker or bundled offline dependency cache. Vue, Tailwind CSS, icons, and fonts load from external CDNs, and the catalog is fetched from the server; use the app through an HTTP server with those dependencies available.
+* Tailwind utilities are compiled into the local `tailwind.css` file. Vue, Font Awesome, and fonts still load from external CDNs, and the catalog is fetched from the server; use the app through an HTTP server with those dependencies available. There is no service worker or bundled offline dependency cache.
 
 ---
 
