@@ -299,7 +299,7 @@
             <span>Надворешно</span>
             <span :class="activeCategory === 'EXTERIOR' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'"
               class="text-[10px] px-1.5 py-0.2 rounded-full font-extrabold">
-              27
+              {{ exteriorCount }}
             </span>
           </button>
 
@@ -310,7 +310,7 @@
             <span>Внатрешно</span>
             <span :class="activeCategory === 'INTERIOR' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'"
               class="text-[10px] px-1.5 py-0.2 rounded-full font-extrabold">
-              15
+              {{ interiorCount }}
             </span>
           </button>
 
@@ -438,7 +438,12 @@
 
       <!-- Checklist Items Grid -->
       <div class="space-y-3" :class="{ 'has-active-focus': focusBlurMode && activeItemKey !== null }">
-        <div v-for="item in filteredItems" :key="item.key" @click="setActiveItem(item)"
+        <template v-for="(item, itemIndex) in filteredItems" :key="item.key">
+        <h2 v-if="item.section && (!filteredItems[itemIndex - 1] || filteredItems[itemIndex - 1].section !== item.section)"
+          class="pt-4 pb-1 text-xs font-extrabold uppercase text-slate-500 border-b border-slate-200">
+          {{ item.section }}
+        </h2>
+        <div @click="setActiveItem(item)"
           class="checklist-card bg-white rounded-2xl border transition-all duration-200 overflow-hidden shadow-ios"
           :class="[
                activeItemKey === item.key ? 'card-active' : (
@@ -480,8 +485,7 @@
                       Непроверено
                     </span> -->
                   </div>
-                  <p class="text-xs text-slate-500 mt-0.5 leading-relaxed font-normal hidden ">
-                    <!-- hid the subtitle using the class hidden -->
+                  <p class="text-xs text-slate-500 mt-0.5 leading-relaxed font-normal">
                     {{ item.subtitle }}
                   </p>
                 </div>
@@ -633,6 +637,7 @@
             </div>
 
           </div>
+        </template>
 
         </div>
       </div>
@@ -715,6 +720,18 @@
               </select>
             </div>
             <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Секција</label>
+              <select v-model="newPoint.section"
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Без секција</option>
+                <option>НАПРЕД</option>
+                <option>ДЕСНА СТРАНА</option>
+                <option>ПОЗАДИ</option>
+                <option>ЛЕВА СТРАНА</option>
+                <option>ЕНТЕРИЕР</option>
+              </select>
+            </div>
+            <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">Специјална контрола</label>
               <select v-model="newPoint.specialType"
                 class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -722,7 +739,6 @@
                 <option value="wheels">Тип на бандажи</option>
                 <option value="ignition">Начин на палење</option>
                 <option value="spare_wheel">Резервна опрема</option>
-                <option value="keys">Број на клучеви</option>
                 <option value="odometer">Километража</option>
               </select>
             </div>
@@ -1039,7 +1055,7 @@
         </div>
 
         <div v-else class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 font-medium">
-          Возилото е детално прегледано во сите {{ printData.items ? printData.items.length : 45 }} точки и нема
+          Возилото е детално прегледано во сите {{ printData.items ? printData.items.length : 0 }} точки и нема
           забележано оштетувања или технички неправилности.
         </div>
       </div>
@@ -1047,10 +1063,14 @@
       <!-- Complete Checklist Grid Table -->
       <div class="mb-6">
         <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700 mb-2 border-b border-slate-200 pb-1">3.
-          Комплетна листа на {{ printData.items ? printData.items.length : 45 }} контролни точки</h4>
+          Комплетна листа на {{ printData.items ? printData.items.length : 0 }} контролни точки</h4>
         <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
-          <div v-for="(item, printIndex) in printData.items" :key="'print_all_' + item.key"
-            class="flex items-center justify-between py-1 border-b border-slate-100">
+          <template v-for="(item, printIndex) in printData.items" :key="'print_all_' + item.key">
+          <div v-if="item.section && (!printData.items[printIndex - 1] || printData.items[printIndex - 1].section !== item.section)"
+            class="col-span-2 pt-2 mt-1 font-extrabold uppercase text-slate-600 border-b border-slate-200">
+            {{ item.section }}
+          </div>
+          <div class="flex items-center justify-between py-1 border-b border-slate-100">
             <span class="truncate pr-2"><span class="font-bold text-slate-500">{{ printIndex + 1 }}.</span> {{
               item.title
               }}</span>
@@ -1060,6 +1080,7 @@
               <span v-else class="text-slate-400">[ - ]</span>
             </div>
           </div>
+          </template>
         </div>
       </div>
 
@@ -1117,7 +1138,7 @@
         const manageMode = ref(false);
         const showPointEditor = ref(false);
         const pointEditorIndex = ref(null);
-        const newPoint = ref({ title: '', subtitle: '', category: 'EXTERIOR', specialType: '', tags: '' });
+        const newPoint = ref({ title: '', subtitle: '', category: 'EXTERIOR', section: '', specialType: '', tags: '' });
         const focusBlurMode = ref(false);
         const showVehicleModal = ref(false);
         const showArchiveModal = ref(false);
@@ -1177,18 +1198,23 @@
           const index = getItemIndex(item);
           const nextIndex = index + direction;
           if (index < 0 || nextIndex < 0 || nextIndex >= items.value.length) return;
+          if (items.value[nextIndex].section !== item.section) return;
           const movedItem = items.value.splice(index, 1)[0];
           items.value.splice(nextIndex, 0, movedItem);
           saveDraft();
         };
 
         const resetPointEditor = () => {
-          newPoint.value = { title: '', subtitle: '', category: 'EXTERIOR', specialType: '', tags: '' };
+          newPoint.value = { title: '', subtitle: '', category: 'EXTERIOR', section: '', specialType: '', tags: '' };
         };
 
         const openPointEditor = (afterItem = null) => {
           pointEditorIndex.value = afterItem ? getItemIndex(afterItem) + 1 : items.value.length;
           resetPointEditor();
+          if (afterItem) {
+            newPoint.value.category = afterItem.category || 'EXTERIOR';
+            newPoint.value.section = afterItem.section || '';
+          }
           showPointEditor.value = true;
         };
 
@@ -1203,15 +1229,26 @@
             return;
           }
           const key = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          const specialPreset = newPoint.value.specialType
+            ? items.value.find(item => item.specialType === newPoint.value.specialType)
+            : null;
+          if (newPoint.value.specialType && !specialPreset) {
+            showToast('Избраната специјална контрола не е конфигурирана', 'fa-solid fa-circle-exclamation', '#DC2626');
+            return;
+          }
           const point = {
             key,
             category: newPoint.value.category,
+            ...(newPoint.value.section ? { section: newPoint.value.section } : {}),
             title: newPoint.value.title.trim(),
             subtitle: newPoint.value.subtitle.trim(),
             status: null,
             comment: '',
             photos: [],
-            specialType: newPoint.value.specialType || undefined,
+            ...(specialPreset ? {
+              specialType: specialPreset.specialType,
+              specialControl: JSON.parse(JSON.stringify(specialPreset.specialControl))
+            } : {}),
             tags: newPoint.value.tags.split(',').map(tag => tag.trim()).filter(Boolean)
           };
           items.value.splice(pointEditorIndex.value ?? items.value.length, 0, point);
@@ -1361,7 +1398,7 @@
 
         const saveDraft = () => {
           const draft = {
-            schemaVersion: 4,
+            schemaVersion: 5,
             vehicle: vehicle.value,
             items: items.value,
             specialValues: specialValues.value,
@@ -1380,7 +1417,7 @@
           if (!raw) return;
           try {
             const draft = JSON.parse(raw);
-            if (draft.schemaVersion !== 4) {
+            if (draft.schemaVersion !== 5) {
               localStorage.removeItem('autocheck_current_draft');
               showToast('Старата работна верзија е ресетирана поради новиот систем на точки', 'fa-solid fa-rotate-left', '#D97706');
               return;
@@ -1502,8 +1539,8 @@
         };
 
         const exportInspectionPoints = () => {
-          const definitions = items.value.map(({ key, id, category, title, subtitle, specialType, specialControl, tags }) => {
-            const definition = { key, ...(id ? { id } : {}), category, title, subtitle };
+          const definitions = items.value.map(({ key, id, category, section, title, subtitle, specialType, specialControl, tags }) => {
+            const definition = { key, ...(id ? { id } : {}), ...(category ? { category } : {}), ...(section ? { section } : {}), title, subtitle };
             if (specialType) definition.specialType = specialType;
             if (specialControl) definition.specialControl = specialControl;
             definition.tags = getTagsForItem({ id, tags });
@@ -1593,6 +1630,8 @@
 
         const okCount = computed(() => items.value.filter(i => i.status === 'OK').length);
         const notOkCount = computed(() => items.value.filter(i => i.status === 'NOT_OK').length);
+        const exteriorCount = computed(() => items.value.filter(i => i.category === 'EXTERIOR').length);
+        const interiorCount = computed(() => items.value.filter(i => i.category === 'INTERIOR').length);
         const evaluatedCount = computed(() => items.value.filter(i => i.status !== null).length);
         const progressPercent = computed(() => Math.round((evaluatedCount.value / items.value.length) * 100));
 
@@ -1635,6 +1674,8 @@
           toast,
           okCount,
           notOkCount,
+          exteriorCount,
+          interiorCount,
           evaluatedCount,
           progressPercent,
           filteredItems,
