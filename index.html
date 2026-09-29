@@ -557,7 +557,7 @@
                 <div class="flex items-center gap-2 flex-wrap">
                   <label v-for="option in item.specialControl.options" :key="option"
                     class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all"
-                    :class="specialValues[item.key] === option ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'">
+                    :class="specialValues[item.key] === option ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : 'bg-red-200 text-slate-700 border-slate-200 hover:bg-slate-100'">
                     <input type="radio" :name="'special_type_' + item.key" :value="option"
                       v-model="specialValues[item.key]" @change="saveDraft" class="hidden">
                     <i v-if="specialValues[item.key] === option" class="fa-solid fa-circle-dot text-[11px]"></i>
