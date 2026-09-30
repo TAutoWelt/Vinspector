@@ -510,6 +510,18 @@
     "subtitle": "Состојба на кожа, истрошеност и команди на волан",
     "tags": [
       "ОШТЕТАНА КОЖА"
+    ]
+    },
+  {
+    "key": "point-41",
+    "id": 41,
+    "category": "INTERIOR",
+    "section": "ЕНТЕРИЕР",
+    "title": "ПАЛЕЊЕ",
+    "subtitle": "Нормално пали / Со кабли",
+    "tags": [
+      "ТЕШКО ПАЛИ",
+      "ТРОПАЊЕ ПРИ ПАЛЕЊЕ"
     ],
     "specialType": "ignition",
     "specialControl": {
@@ -522,18 +534,6 @@
         "Не пали"
       ]
     }
-  },
-  {
-    "key": "point-41",
-    "id": 41,
-    "category": "INTERIOR",
-    "section": "ЕНТЕРИЕР",
-    "title": "ПАЛЕЊЕ",
-    "subtitle": "Нормално пали / Со кабли",
-    "tags": [
-      "ТЕШКО ПАЛИ",
-      "ТРОПАЊЕ ПРИ ПАЛЕЊЕ"
-    ]
   },
   {
     "key": "point-42",
@@ -659,15 +659,7 @@
     "tags": [
       "НЕ ЛАДИ ВООПШТО",
       "СЛАБО ЛАДИ"
-    ],
-    "specialType": "odometer",
-    "specialControl": {
-      "type": "number",
-      "label": "Запис на моментална километража:",
-      "unit": "KM",
-      "placeholder": "пр. 165000",
-      "required": true
-    }
+    ]
   },
   {
     "key": "point-51",
@@ -683,7 +675,15 @@
       "+ 200km",
       "+300 km",
       "+ 400 km"
-    ]
+    ],
+    "specialType": "odometer",
+    "specialControl": {
+      "type": "number",
+      "label": "Запис на моментална километража:",
+      "unit": "KM",
+      "placeholder": "пр. 165000",
+      "required": true
+    }
   },
   {
     "key": "point-52",
