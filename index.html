@@ -6,58 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>AutoWeltInspector - Проверка на возила</title>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap"
-    rel="stylesheet">
-
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="./tailwind.css">
+  <link rel="stylesheet" href="./vendor/fonts/fonts.css">
 
   <!-- FontAwesome 6 Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="./vendor/fontawesome/css/all.min.css">
 
-  <!-- Vue 3 CDN -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-          },
-          colors: {
-            ios: {
-              bg: '#F2F2F7',
-              card: '#FFFFFF',
-              border: '#E2E8F0',
-              text: '#0F172A',
-              muted: '#64748B',
-              red: '#DC2626',
-              redLight: '#FEF2F2',
-              redBorder: '#FECACA',
-              green: '#059669',
-              greenLight: '#ECFDF5',
-              greenBorder: '#A7F3D0',
-              blue: '#2563EB',
-              blueLight: '#EFF6FF',
-              amber: '#D97706',
-              amberLight: '#FFFBEB'
-            }
-          },
-          boxShadow: {
-            'ios-sm': '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
-            'ios': '0 4px 14px 0 rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.03)',
-            'ios-lg': '0 10px 25px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.03)',
-            'ios-sheet': '0 -8px 30px rgba(0, 0, 0, 0.12)'
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Vue 3 Runtime -->
+  <script src="./vendor/vue.global.prod.js"></script>
 
   <style>
     /* Custom iOS Scrollbar & styling */
@@ -299,7 +255,7 @@
             <span>Надворешно</span>
             <span :class="activeCategory === 'EXTERIOR' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'"
               class="text-[10px] px-1.5 py-0.2 rounded-full font-extrabold">
-              27
+              {{ exteriorCount }}
             </span>
           </button>
 
@@ -310,7 +266,7 @@
             <span>Внатрешно</span>
             <span :class="activeCategory === 'INTERIOR' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'"
               class="text-[10px] px-1.5 py-0.2 rounded-full font-extrabold">
-              15
+              {{ interiorCount }}
             </span>
           </button>
 
@@ -348,7 +304,7 @@
     </header>
 
     <!-- Main Content Container -->
-    <main class="max-w-5xl mx-auto px-4 sm:px-6 pt-4 space-y-3 no-print">
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 pt-4 pb-5 space-y-3 no-print">
 
       <!-- Bulk Actions Bar -->
       <div class="inspection-toolbar grid grid-cols-2 items-center gap-2 px-1 py-1 text-xs text-slate-500 sm:flex sm:flex-nowrap">
@@ -438,7 +394,12 @@
 
       <!-- Checklist Items Grid -->
       <div class="space-y-3" :class="{ 'has-active-focus': focusBlurMode && activeItemKey !== null }">
-        <div v-for="item in filteredItems" :key="item.key" @click="setActiveItem(item)"
+        <template v-for="(item, itemIndex) in filteredItems" :key="item.key">
+        <h2 v-if="item.section && (!filteredItems[itemIndex - 1] || filteredItems[itemIndex - 1].section !== item.section)"
+          class="pt-4 pb-1 text-xs font-extrabold uppercase text-slate-500 border-b border-slate-200">
+          {{ item.section }}
+        </h2>
+        <div :id="'point-' + item.key" @click="setActiveItem(item)"
           class="checklist-card bg-white rounded-2xl border transition-all duration-200 overflow-hidden shadow-ios"
           :class="[
                activeItemKey === item.key ? 'card-active' : (
@@ -480,8 +441,7 @@
                       Непроверено
                     </span> -->
                   </div>
-                  <p class="text-xs text-slate-500 mt-0.5 leading-relaxed font-normal hidden ">
-                    <!-- hid the subtitle using the class hidden -->
+                  <p class="text-xs text-slate-500 mt-0.5 leading-relaxed font-normal">
                     {{ item.subtitle }}
                   </p>
                 </div>
@@ -633,8 +593,8 @@
             </div>
 
           </div>
+        </template>
 
-        </div>
       </div>
 
       <!-- Bottom Floating Save Bar (Mobile Friendly) -->
@@ -715,6 +675,18 @@
               </select>
             </div>
             <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Секција</label>
+              <select v-model="newPoint.section"
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Без секција</option>
+                <option>НАПРЕД</option>
+                <option>ДЕСНА СТРАНА</option>
+                <option>ПОЗАДИ</option>
+                <option>ЛЕВА СТРАНА</option>
+                <option>ЕНТЕРИЕР</option>
+              </select>
+            </div>
+            <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">Специјална контрола</label>
               <select v-model="newPoint.specialType"
                 class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -722,7 +694,6 @@
                 <option value="wheels">Тип на бандажи</option>
                 <option value="ignition">Начин на палење</option>
                 <option value="spare_wheel">Резервна опрема</option>
-                <option value="keys">Број на клучеви</option>
                 <option value="odometer">Километража</option>
               </select>
             </div>
@@ -913,7 +884,7 @@
                 <i class="fa-solid fa-print"></i>
               </button>
 
-              <button @click="deleteReportFromArchive(idx)"
+              <button @click="deleteReportFromArchive(rep.id)"
                 class="w-8 h-8 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center text-xs active:scale-95 transition-all"
                 title="Избриши од архива">
                 <i class="fa-solid fa-trash"></i>
@@ -1039,7 +1010,7 @@
         </div>
 
         <div v-else class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 font-medium">
-          Возилото е детално прегледано во сите {{ printData.items ? printData.items.length : 45 }} точки и нема
+          Возилото е детално прегледано во сите {{ printData.items ? printData.items.length : 0 }} точки и нема
           забележано оштетувања или технички неправилности.
         </div>
       </div>
@@ -1047,10 +1018,14 @@
       <!-- Complete Checklist Grid Table -->
       <div class="mb-6">
         <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700 mb-2 border-b border-slate-200 pb-1">3.
-          Комплетна листа на {{ printData.items ? printData.items.length : 45 }} контролни точки</h4>
+          Комплетна листа на {{ printData.items ? printData.items.length : 0 }} контролни точки</h4>
         <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
-          <div v-for="(item, printIndex) in printData.items" :key="'print_all_' + item.key"
-            class="flex items-center justify-between py-1 border-b border-slate-100">
+          <template v-for="(item, printIndex) in printData.items" :key="'print_all_' + item.key">
+          <div v-if="item.section && (!printData.items[printIndex - 1] || printData.items[printIndex - 1].section !== item.section)"
+            class="col-span-2 pt-2 mt-1 font-extrabold uppercase text-slate-600 border-b border-slate-200">
+            {{ item.section }}
+          </div>
+          <div class="flex items-center justify-between py-1 border-b border-slate-100">
             <span class="truncate pr-2"><span class="font-bold text-slate-500">{{ printIndex + 1 }}.</span> {{
               item.title
               }}</span>
@@ -1060,6 +1035,7 @@
               <span v-else class="text-slate-400">[ - ]</span>
             </div>
           </div>
+          </template>
         </div>
       </div>
 
@@ -1083,7 +1059,7 @@
 
   <!-- Main Vue 3 Application Script -->
   <script>
-    const { createApp, ref, computed, onMounted, watch } = Vue;
+    const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
 
     createApp({
       setup() {
@@ -1117,7 +1093,7 @@
         const manageMode = ref(false);
         const showPointEditor = ref(false);
         const pointEditorIndex = ref(null);
-        const newPoint = ref({ title: '', subtitle: '', category: 'EXTERIOR', specialType: '', tags: '' });
+        const newPoint = ref({ title: '', subtitle: '', category: 'EXTERIOR', section: '', specialType: '', tags: '' });
         const focusBlurMode = ref(false);
         const showVehicleModal = ref(false);
         const showArchiveModal = ref(false);
@@ -1177,18 +1153,23 @@
           const index = getItemIndex(item);
           const nextIndex = index + direction;
           if (index < 0 || nextIndex < 0 || nextIndex >= items.value.length) return;
+          if (items.value[nextIndex].section !== item.section) return;
           const movedItem = items.value.splice(index, 1)[0];
           items.value.splice(nextIndex, 0, movedItem);
           saveDraft();
         };
 
         const resetPointEditor = () => {
-          newPoint.value = { title: '', subtitle: '', category: 'EXTERIOR', specialType: '', tags: '' };
+          newPoint.value = { title: '', subtitle: '', category: 'EXTERIOR', section: '', specialType: '', tags: '' };
         };
 
         const openPointEditor = (afterItem = null) => {
           pointEditorIndex.value = afterItem ? getItemIndex(afterItem) + 1 : items.value.length;
           resetPointEditor();
+          if (afterItem) {
+            newPoint.value.category = afterItem.category || 'EXTERIOR';
+            newPoint.value.section = afterItem.section || '';
+          }
           showPointEditor.value = true;
         };
 
@@ -1203,15 +1184,26 @@
             return;
           }
           const key = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          const specialPreset = newPoint.value.specialType
+            ? items.value.find(item => item.specialType === newPoint.value.specialType)
+            : null;
+          if (newPoint.value.specialType && !specialPreset) {
+            showToast('Избраната специјална контрола не е конфигурирана', 'fa-solid fa-circle-exclamation', '#DC2626');
+            return;
+          }
           const point = {
             key,
             category: newPoint.value.category,
+            ...(newPoint.value.section ? { section: newPoint.value.section } : {}),
             title: newPoint.value.title.trim(),
             subtitle: newPoint.value.subtitle.trim(),
             status: null,
             comment: '',
             photos: [],
-            specialType: newPoint.value.specialType || undefined,
+            ...(specialPreset ? {
+              specialType: specialPreset.specialType,
+              specialControl: JSON.parse(JSON.stringify(specialPreset.specialControl))
+            } : {}),
             tags: newPoint.value.tags.split(',').map(tag => tag.trim()).filter(Boolean)
           };
           items.value.splice(pointEditorIndex.value ?? items.value.length, 0, point);
@@ -1327,7 +1319,8 @@
             date: todayDate,
             generalNotes: ''
           };
-          localStorage.removeItem('autocheck_current_draft');
+          enqueueWrite(() => dbRequest('draft', 'readwrite', store => store.delete(DRAFT_KEY)))
+            .catch(error => console.warn('Draft reset failed', error));
           draftLastSaved.value = null;
         };
 
@@ -1337,7 +1330,87 @@
           showToast('Податоците за возилото се зачувани', 'fa-solid fa-check', '#059669');
         };
 
-        // LocalStorage Persistence
+        // IndexedDB Persistence
+        const DB_NAME = 'autocheck';
+        const DB_VERSION = 1;
+        const DRAFT_KEY = 'current';
+        let dbPromise = null;
+        let writeChain = Promise.resolve();
+
+        const getDb = () => {
+          if (!dbPromise) {
+            dbPromise = new Promise((resolve, reject) => {
+              if (!window.indexedDB) {
+                reject(new Error('IndexedDB is not available'));
+                return;
+              }
+
+              const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+              request.onupgradeneeded = () => {
+                const db = request.result;
+                if (!db.objectStoreNames.contains('draft')) db.createObjectStore('draft');
+                if (!db.objectStoreNames.contains('reports')) db.createObjectStore('reports', { keyPath: 'id' });
+              };
+              request.onsuccess = () => resolve(request.result);
+              request.onerror = () => reject(request.error || new Error('Unable to open IndexedDB'));
+            });
+          }
+          return dbPromise;
+        };
+
+        const enqueueWrite = task => {
+          const run = writeChain.then(task);
+          writeChain = run.catch(() => {});
+          return run;
+        };
+
+        const dbRequest = async (storeName, mode, makeRequest) => {
+          const db = await getDb();
+          return new Promise((resolve, reject) => {
+            const transaction = db.transaction(storeName, mode);
+            let request;
+            transaction.oncomplete = () => resolve(request ? request.result : undefined);
+            transaction.onerror = () => reject(transaction.error || new Error('IndexedDB transaction failed'));
+            transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'));
+            try {
+              request = makeRequest(transaction.objectStore(storeName));
+            } catch (error) {
+              transaction.abort();
+              reject(error);
+            }
+          });
+        };
+
+        // Keeps only letters and digits from the VIN, so it is safe in IDs and file names
+        const cleanVin = vin => String(vin || '').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'NOVIN';
+
+        // Report ID: AC-<VIN>-<YYYYMMDD>-<HHMMSS>-<4 random chars>
+        // The VIN alone is not unique, because the same car can be inspected more than once.
+        // The timestamp and random part keep each saved report unique.
+        const makeReportId = vin => {
+          const now = new Date();
+          const pad = n => String(n).padStart(2, '0');
+          const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`
+            + `-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+          const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+          return `AC-${cleanVin(vin)}-${stamp}-${suffix}`;
+        };
+
+        // PDF file name: <VIN>_<date>. The browser adds ".pdf" when it saves the file.
+        const pdfBaseName = (vehicle, dateStr) => `${cleanVin(vehicle.vin)}_${dateStr || todayDate}`;
+
+        // Sets the document title (the browser uses it as the PDF file name), prints, then restores the title
+        const printWithFileName = fileBaseName => {
+          const previousTitle = document.title;
+          const restoreTitle = () => {
+            document.title = previousTitle;
+            window.removeEventListener('afterprint', restoreTitle);
+          };
+          document.title = fileBaseName;
+          window.addEventListener('afterprint', restoreTitle);
+          setTimeout(() => window.print(), 150);
+        };
+
         const loadInspectionPoints = async () => {
           try {
             const response = await fetch('inspection-points.json', { cache: 'no-store' });
@@ -1359,29 +1432,29 @@
           }
         };
 
-        const saveDraft = () => {
+        const saveDraft = async () => {
           const draft = {
-            schemaVersion: 4,
+            schemaVersion: 5,
             vehicle: vehicle.value,
             items: items.value,
             specialValues: specialValues.value,
             savedAt: new Date().toISOString()
           };
           try {
-            localStorage.setItem('autocheck_current_draft', JSON.stringify(draft));
+            const plain = JSON.parse(JSON.stringify(draft));
+            await enqueueWrite(() => dbRequest('draft', 'readwrite', store => store.put(plain, DRAFT_KEY)));
             draftLastSaved.value = new Date();
-          } catch (e) {
-            console.warn('Draft save quota reached (photos may be large)', e);
+          } catch (error) {
+            console.warn('Draft save failed (photos may be large)', error);
           }
         };
 
-        const loadDraft = () => {
-          const raw = localStorage.getItem('autocheck_current_draft');
-          if (!raw) return;
+        const loadDraft = async () => {
           try {
-            const draft = JSON.parse(raw);
-            if (draft.schemaVersion !== 4) {
-              localStorage.removeItem('autocheck_current_draft');
+            const draft = await dbRequest('draft', 'readonly', store => store.get(DRAFT_KEY));
+            if (!draft) return;
+            if (draft.schemaVersion !== 5) {
+              await enqueueWrite(() => dbRequest('draft', 'readwrite', store => store.delete(DRAFT_KEY)));
               showToast('Старата работна верзија е ресетирана поради новиот систем на точки', 'fa-solid fa-rotate-left', '#D97706');
               return;
             }
@@ -1398,26 +1471,47 @@
               items.value.push(...customItems);
             }
             draftLastSaved.value = new Date(draft.savedAt);
-          } catch (e) {
-            console.error('Error loading draft:', e);
+          } catch (error) {
+            console.error('Error loading draft:', error);
           }
         };
 
-        const loadSavedReports = () => {
-          const raw = localStorage.getItem('autocheck_reports');
-          if (raw) {
-            try {
-              const reports = JSON.parse(raw);
-              if (!Array.isArray(reports) || reports.some(report => report.schemaVersion !== 3)) {
-                localStorage.removeItem('autocheck_reports');
-                savedReports.value = [];
-                showToast('Старата архива е ресетирана поради новиот систем на точки', 'fa-solid fa-rotate-left', '#D97706');
-              } else {
-                savedReports.value = reports;
-              }
-            } catch (e) {
+        const loadSavedReports = async () => {
+          try {
+            const reports = await dbRequest('reports', 'readonly', store => store.getAll());
+            if (reports.some(report => report.schemaVersion !== 3)) {
+              await enqueueWrite(() => dbRequest('reports', 'readwrite', store => store.clear()));
               savedReports.value = [];
+              showToast('Старата архива е ресетирана поради новиот систем на точки', 'fa-solid fa-rotate-left', '#D97706');
+              return;
             }
+            savedReports.value = reports.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+          } catch (error) {
+            console.error('Error loading saved reports:', error);
+          }
+        };
+
+        const requestPersistentStorage = async () => {
+          try {
+            if (navigator.storage && navigator.storage.persist) await navigator.storage.persist();
+          } catch (error) {
+            console.warn('Persistent storage request failed:', error);
+          }
+        };
+
+        // Scrolls to a checklist card. If a filter or search is hiding it, reset the filters first.
+        const scrollToItem = async item => {
+          const isVisible = filteredItems.value.some(candidate => candidate.key === item.key);
+          if (!isVisible) {
+            activeCategory.value = 'ALL';
+            searchQuery.value = '';
+            showUncheckedOnly.value = false;
+            await nextTick();
+          }
+
+          const element = document.getElementById('point-' + item.key);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         };
 
@@ -1428,6 +1522,7 @@
           if (!missingItem) return true;
 
           activeItemKey.value = missingItem.key;
+          scrollToItem(missingItem);
           showToast(`Изберете вредност за „${missingItem.title}“ пред да продолжите`, 'fa-solid fa-triangle-exclamation', '#D97706');
           return false;
         };
@@ -1448,10 +1543,10 @@
           return false;
         };
 
-        const saveReportToArchive = () => {
+        const saveReportToArchive = async () => {
           if (!validateRequiredVehicleFields()) return;
 
-          const reportId = 'AC-' + Date.now().toString().slice(-6);
+          const reportId = makeReportId(vehicle.value.vin);
           const defects = items.value.filter(i => i.status === 'NOT_OK');
           const oks = items.value.filter(i => i.status === 'OK');
 
@@ -1468,9 +1563,14 @@
             totalCount: items.value.length
           };
 
-          savedReports.value.unshift(report);
-          localStorage.setItem('autocheck_reports', JSON.stringify(savedReports.value));
-          showToast(`Извештајот за ${vehicle.value.brand || 'возилото'} е зачуван во архива!`, 'fa-solid fa-floppy-disk', '#059669');
+          try {
+            await enqueueWrite(() => dbRequest('reports', 'readwrite', store => store.put(report)));
+            savedReports.value.unshift(report);
+            showToast(`Извештајот за ${vehicle.value.brand || 'возилото'} е зачуван во архива!`, 'fa-solid fa-floppy-disk', '#059669');
+          } catch (error) {
+            console.error('Error saving report:', error);
+            showToast('Грешка при зачувување. Пробајте повторно.', 'fa-solid fa-triangle-exclamation', '#DC2626');
+          }
         };
 
         const loadReportFromArchive = (rep) => {
@@ -1485,11 +1585,16 @@
           }
         };
 
-        const deleteReportFromArchive = (idx) => {
+        const deleteReportFromArchive = async id => {
           if (confirm('Дали сакате трајно да го избришете овој извештај од архивата?')) {
-            savedReports.value.splice(idx, 1);
-            localStorage.setItem('autocheck_reports', JSON.stringify(savedReports.value));
-            showToast('Извештајот е избришан', 'fa-solid fa-trash', '#EF4444');
+            try {
+              await enqueueWrite(() => dbRequest('reports', 'readwrite', store => store.delete(id)));
+              savedReports.value = savedReports.value.filter(report => report.id !== id);
+              showToast('Извештајот е избришан', 'fa-solid fa-trash', '#EF4444');
+            } catch (error) {
+              console.error('Error deleting report:', error);
+              showToast('Грешка при бришење. Пробајте повторно.', 'fa-solid fa-triangle-exclamation', '#DC2626');
+            }
           }
         };
 
@@ -1502,8 +1607,8 @@
         };
 
         const exportInspectionPoints = () => {
-          const definitions = items.value.map(({ key, id, category, title, subtitle, specialType, specialControl, tags }) => {
-            const definition = { key, ...(id ? { id } : {}), category, title, subtitle };
+          const definitions = items.value.map(({ key, id, category, section, title, subtitle, specialType, specialControl, tags }) => {
+            const definition = { key, ...(id ? { id } : {}), ...(category ? { category } : {}), ...(section ? { section } : {}), title, subtitle };
             if (specialType) definition.specialType = specialType;
             if (specialControl) definition.specialControl = specialControl;
             definition.tags = getTagsForItem({ id, tags });
@@ -1523,14 +1628,12 @@
           if (!validateRequiredSpecialValues()) return;
 
           printData.value = {
-            id: 'AC-' + Date.now().toString().slice(-6),
+            id: makeReportId(vehicle.value.vin),
             vehicle: JSON.parse(JSON.stringify(vehicle.value)),
             items: JSON.parse(JSON.stringify(items.value)),
             specialValues: JSON.parse(JSON.stringify(specialValues.value))
           };
-          setTimeout(() => {
-            window.print();
-          }, 150);
+          printWithFileName(pdfBaseName(printData.value.vehicle, printData.value.vehicle.date));
         };
 
         const printArchivedReport = (rep) => {
@@ -1540,9 +1643,7 @@
             items: JSON.parse(JSON.stringify(rep.items)),
             specialValues: JSON.parse(JSON.stringify(rep.specialValues || {}))
           };
-          setTimeout(() => {
-            window.print();
-          }, 150);
+          printWithFileName(pdfBaseName(rep.vehicle, rep.vehicle.date));
         };
 
         // Format KM with thousand separators
@@ -1593,13 +1694,23 @@
 
         const okCount = computed(() => items.value.filter(i => i.status === 'OK').length);
         const notOkCount = computed(() => items.value.filter(i => i.status === 'NOT_OK').length);
+        const exteriorCount = computed(() => items.value.filter(i => i.category === 'EXTERIOR').length);
+        const interiorCount = computed(() => items.value.filter(i => i.category === 'INTERIOR').length);
         const evaluatedCount = computed(() => items.value.filter(i => i.status !== null).length);
         const progressPercent = computed(() => Math.round((evaluatedCount.value / items.value.length) * 100));
 
         onMounted(async () => {
           await loadInspectionPoints();
-          loadSavedReports();
-          loadDraft();
+          try {
+            await getDb();
+          } catch (error) {
+            console.error('IndexedDB is unavailable:', error);
+            showToast('Податоците нема да се зачуваат', 'fa-solid fa-triangle-exclamation', '#DC2626');
+            return;
+          }
+          await loadSavedReports();
+          await loadDraft();
+          await requestPersistentStorage();
         });
 
         return {
@@ -1635,6 +1746,8 @@
           toast,
           okCount,
           notOkCount,
+          exteriorCount,
+          interiorCount,
           evaluatedCount,
           progressPercent,
           filteredItems,
