@@ -1263,19 +1263,66 @@
         const PHOTO_QUALITY = 0.8;     // JPEG quality, 0 to 1
 
         // Loads a file into an <img> element so the browser can decode it
-        const loadImageFile = file => new Promise((resolve, reject) => {
-          const url = URL.createObjectURL(file);
-          const img = new Image();
-          img.onload = () => {
-            URL.revokeObjectURL(url);
-            resolve(img);
-          };
-          img.onerror = () => {
-            URL.revokeObjectURL(url);
-            reject(new Error('Image could not be decoded'));
-          };
-          img.src = url;
-        });
+const loadImageFile = file => new Promise((resolve, reject) => {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    resolve(img);
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    const sizeKb = Math.round(file.size / 1024);
+    reject(new Error(`Image could not be decoded: ${file.name} (type: ${file.type || 'unknown'}, ${sizeKb} KB)`));
+  };
+  img.src = url;
+});
+
+// Converts a Blob to a data URL string
+const blobToDataUrl = blob => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = () => reject(reader.error);
+  reader.readAsDataURL(blob);
+});
+
+// Resizes the photo to MAX_PHOTO_SIDE and returns it as a JPEG data URL
+const compressImage = async file => {
+  const img = await loadImageFile(file);
+  const scale = Math.min(1, MAX_PHOTO_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+  const width = Math.round(img.naturalWidth * scale);
+  const height = Math.round(img.naturalHeight * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext('2d');
+  // White background, so transparent areas do not turn black in JPEG
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(img, 0, 0, width, height);
+
+  // toBlob is used instead of toDataURL so the output type can be checked
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob(
+      result => result ? resolve(result) : reject(new Error('Canvas could not export the image')),
+      'image/jpeg',
+      PHOTO_QUALITY
+    );
+  });
+
+  if (blob.type !== 'image/jpeg') {
+    throw new Error(`Export produced ${blob.type || 'unknown type'} instead of JPEG`);
+  }
+
+  console.info(
+    `Photo ${file.name}: ${file.type || 'unknown'} ${(file.size / 1048576).toFixed(2)} MB ` +
+    `-> JPEG ${width}x${height}, ${Math.round(blob.size / 1024)} KB`
+  );
+
+  return blobToDataUrl(blob);
+};
 
         // Resizes the photo to MAX_PHOTO_SIDE and returns it as a JPEG data URL
         const compressImage = async file => {
@@ -1299,32 +1346,31 @@
 
 
 
-        const handlePhotoUpload = async (event, item) => {
-          // Copy the file list first, then clear the input so the same file can be chosen again
-          const files = Array.from(event.target.files || []);
-          event.target.value = '';
-          if (files.length === 0) return;
+const handlePhotoUpload = async (event, item) => {
+  const files = Array.from(event.target.files || []);
+  event.target.value = '';
+  if (files.length === 0) return;
 
-          if (!item.photos) item.photos = [];
+  if (!item.photos) item.photos = [];
 
-          let failedCount = 0;
-          for (const file of files) {
-            try {
-              item.photos.push(await compressImage(file));
-            } catch (error) {
-              failedCount++;
-              console.error('Photo could not be processed:', error);
-            }
-          }
+  const failedNames = [];
+  for (const file of files) {
+    try {
+      item.photos.push(await compressImage(file));
+    } catch (error) {
+      failedNames.push(file.name);
+      console.error('Photo could not be processed:', error);
+    }
+  }
 
-          saveDraft();
+  saveDraft();
 
-          if (failedCount === 0) {
-            showToast('Фотографијата е успешно прикачена', 'fa-solid fa-camera', '#059669');
-          } else {
-            showToast(`Некои фотографии не можеа да се вчитаат (${failedCount})`, 'fa-solid fa-triangle-exclamation', '#DC2626');
-          }
-        };
+  if (failedNames.length === 0) {
+    showToast('Фотографијата е успешно прикачена', 'fa-solid fa-camera', '#059669');
+  } else {
+    showToast(`Не може да се вчита: ${failedNames.join(', ')}`, 'fa-solid fa-triangle-exclamation', '#DC2626');
+  }
+};
 
         const removePhoto = (item, idx) => {
           if (item.photos) {
