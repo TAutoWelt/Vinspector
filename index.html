@@ -1259,7 +1259,7 @@
 
         // Compression Helper resizing the images
         // Photo compression settings
-        const MAX_PHOTO_SIDE = 1920;   // longest side in pixels
+        const MAX_PHOTO_SIDE = 1600;   // longest side in pixels
         const PHOTO_QUALITY = 0.8;     // JPEG quality, 0 to 1
 
         // Loads a file into an <img> element so the browser can decode it
@@ -1324,29 +1324,9 @@ const compressImage = async file => {
   return blobToDataUrl(blob);
 };
 
-        // Resizes the photo to MAX_PHOTO_SIDE and returns it as a JPEG data URL
-        const compressImage = async file => {
-          const img = await loadImageFile(file);
-          const scale = Math.min(1, MAX_PHOTO_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
-          const width = Math.round(img.naturalWidth * scale);
-          const height = Math.round(img.naturalHeight * scale);
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-
-          const ctx = canvas.getContext('2d');
-          // White background, so transparent PNG areas do not turn black in JPEG
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, width, height);
-          ctx.drawImage(img, 0, 0, width, height);
-
-          return canvas.toDataURL('image/jpeg', PHOTO_QUALITY);
-        };
 
 
-
-const handlePhotoUpload = async (event, item) => {
+        const handlePhotoUpload = async (event, item) => {
   const files = Array.from(event.target.files || []);
   event.target.value = '';
   if (files.length === 0) return;
