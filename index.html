@@ -399,7 +399,7 @@
           class="pt-4 pb-1 text-xs font-extrabold uppercase text-slate-500 border-b border-slate-200">
           {{ item.section }}
         </h2>
-        <div @click="setActiveItem(item)"
+        <div :id="'point-' + item.key" @click="setActiveItem(item)"
           class="checklist-card bg-white rounded-2xl border transition-all duration-200 overflow-hidden shadow-ios"
           :class="[
                activeItemKey === item.key ? 'card-active' : (
@@ -1059,7 +1059,7 @@
 
   <!-- Main Vue 3 Application Script -->
   <script>
-    const { createApp, ref, computed, onMounted, watch } = Vue;
+    const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
 
     createApp({
       setup() {
@@ -1499,6 +1499,22 @@
           }
         };
 
+        // Scrolls to a checklist card. If a filter or search is hiding it, reset the filters first.
+        const scrollToItem = async item => {
+          const isVisible = filteredItems.value.some(candidate => candidate.key === item.key);
+          if (!isVisible) {
+            activeCategory.value = 'ALL';
+            searchQuery.value = '';
+            showUncheckedOnly.value = false;
+            await nextTick();
+          }
+
+          const element = document.getElementById('point-' + item.key);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        };
+
         const validateRequiredSpecialValues = () => {
           const missingItem = items.value.find(item => item.specialControl?.required
             && !String(specialValues.value[item.key] ?? '').trim());
@@ -1506,6 +1522,7 @@
           if (!missingItem) return true;
 
           activeItemKey.value = missingItem.key;
+          scrollToItem(missingItem);
           showToast(`Изберете вредност за „${missingItem.title}“ пред да продолжите`, 'fa-solid fa-triangle-exclamation', '#D97706');
           return false;
         };
