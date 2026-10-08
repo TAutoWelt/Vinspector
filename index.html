@@ -1576,7 +1576,7 @@
               showToast('Извештајот е избришан', 'fa-solid fa-trash', '#EF4444');
             } catch (error) {
               console.error('Error deleting report:', error);
-              showToast('Грешка при зачувување. Пробајте повторно.', 'fa-solid fa-triangle-exclamation', '#DC2626');
+              showToast('Грешка при бришење. Пробајте повторно.', 'fa-solid fa-triangle-exclamation', '#DC2626');
             }
           }
         };
@@ -1626,7 +1626,7 @@
             items: JSON.parse(JSON.stringify(rep.items)),
             specialValues: JSON.parse(JSON.stringify(rep.specialValues || {}))
           };
-          printWithFileName(pdfBaseName(printData.value.vehicle, printData.value.vehicle.date));
+          printWithFileName(pdfBaseName(rep.vehicle, rep.vehicle.date));
         };
 
         // Format KM with thousand separators
