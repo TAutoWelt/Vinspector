@@ -1369,11 +1369,46 @@
           return new Promise((resolve, reject) => {
             const transaction = db.transaction(storeName, mode);
             let request;
-            transaction.oncomplete = () => resolve(request.result);
+            transaction.oncomplete = () => resolve(request ? request.result : undefined);
             transaction.onerror = () => reject(transaction.error || new Error('IndexedDB transaction failed'));
             transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'));
-            request = makeRequest(transaction.objectStore(storeName));
+            try {
+              request = makeRequest(transaction.objectStore(storeName));
+            } catch (error) {
+              transaction.abort();
+              reject(error);
+            }
           });
+        };
+
+        // Keeps only letters and digits from the VIN, so it is safe in IDs and file names
+        const cleanVin = vin => String(vin || '').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'NOVIN';
+
+        // Report ID: AC-<VIN>-<YYYYMMDD>-<HHMMSS>-<4 random chars>
+        // The VIN alone is not unique, because the same car can be inspected more than once.
+        // The timestamp and random part keep each saved report unique.
+        const makeReportId = vin => {
+          const now = new Date();
+          const pad = n => String(n).padStart(2, '0');
+          const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`
+            + `-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+          const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+          return `AC-${cleanVin(vin)}-${stamp}-${suffix}`;
+        };
+
+        // PDF file name: <VIN>_<date>. The browser adds ".pdf" when it saves the file.
+        const pdfBaseName = (vehicle, dateStr) => `${cleanVin(vehicle.vin)}_${dateStr || todayDate}`;
+
+        // Sets the document title (the browser uses it as the PDF file name), prints, then restores the title
+        const printWithFileName = fileBaseName => {
+          const previousTitle = document.title;
+          const restoreTitle = () => {
+            document.title = previousTitle;
+            window.removeEventListener('afterprint', restoreTitle);
+          };
+          document.title = fileBaseName;
+          window.addEventListener('afterprint', restoreTitle);
+          setTimeout(() => window.print(), 150);
         };
 
         const loadInspectionPoints = async () => {
@@ -1456,39 +1491,6 @@
           }
         };
 
-        const migrateFromLocalStorage = async () => {
-          try {
-            const rawDraft = localStorage.getItem('autocheck_current_draft');
-            const rawReports = localStorage.getItem('autocheck_reports');
-            if (!rawDraft && !rawReports) return;
-
-            if (rawDraft) {
-              const draft = JSON.parse(rawDraft);
-              await enqueueWrite(() => dbRequest('draft', 'readwrite', store => store.put(draft, DRAFT_KEY)));
-            }
-            if (rawReports) {
-              const reports = JSON.parse(rawReports);
-              if (Array.isArray(reports)) {
-                await enqueueWrite(async () => {
-                  const db = await getDb();
-                  await new Promise((resolve, reject) => {
-                    const transaction = db.transaction('reports', 'readwrite');
-                    reports.forEach(report => transaction.objectStore('reports').put(report));
-                    transaction.oncomplete = resolve;
-                    transaction.onerror = () => reject(transaction.error || new Error('Report migration failed'));
-                    transaction.onabort = () => reject(transaction.error || new Error('Report migration aborted'));
-                  });
-                });
-              }
-            }
-
-            localStorage.removeItem('autocheck_current_draft');
-            localStorage.removeItem('autocheck_reports');
-          } catch (error) {
-            console.error('Migration failed; localStorage data kept:', error);
-          }
-        };
-
         const requestPersistentStorage = async () => {
           try {
             if (navigator.storage && navigator.storage.persist) await navigator.storage.persist();
@@ -1527,8 +1529,7 @@
         const saveReportToArchive = async () => {
           if (!validateRequiredVehicleFields()) return;
 
-          // The random suffix prevents reports created in the same millisecond from sharing an ID.
-          const reportId = 'AC-' + Date.now().toString().slice(-6) + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+          const reportId = makeReportId(vehicle.value.vin);
           const defects = items.value.filter(i => i.status === 'NOT_OK');
           const oks = items.value.filter(i => i.status === 'OK');
 
@@ -1610,14 +1611,12 @@
           if (!validateRequiredSpecialValues()) return;
 
           printData.value = {
-            id: 'AC-' + Date.now().toString().slice(-6),
+            id: makeReportId(vehicle.value.vin),
             vehicle: JSON.parse(JSON.stringify(vehicle.value)),
             items: JSON.parse(JSON.stringify(items.value)),
             specialValues: JSON.parse(JSON.stringify(specialValues.value))
           };
-          setTimeout(() => {
-            window.print();
-          }, 150);
+          printWithFileName(pdfBaseName(printData.value.vehicle, printData.value.vehicle.date));
         };
 
         const printArchivedReport = (rep) => {
@@ -1627,9 +1626,7 @@
             items: JSON.parse(JSON.stringify(rep.items)),
             specialValues: JSON.parse(JSON.stringify(rep.specialValues || {}))
           };
-          setTimeout(() => {
-            window.print();
-          }, 150);
+          printWithFileName(pdfBaseName(printData.value.vehicle, printData.value.vehicle.date));
         };
 
         // Format KM with thousand separators
@@ -1694,7 +1691,6 @@
             showToast('Податоците нема да се зачуваат', 'fa-solid fa-triangle-exclamation', '#DC2626');
             return;
           }
-          await migrateFromLocalStorage();
           await loadSavedReports();
           await loadDraft();
           await requestPersistentStorage();
