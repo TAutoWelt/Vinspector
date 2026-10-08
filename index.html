@@ -1255,24 +1255,75 @@
           saveDraft();
         };
 
-        const handlePhotoUpload = (event, item) => {
-          const files = event.target.files;
-          if (!files || files.length === 0) return;
+        // ========================= Photo Upload & Management ==========================
+
+        // Compression Helper resizing the images
+        // Photo compression settings
+        const MAX_PHOTO_SIDE = 1920;   // longest side in pixels
+        const PHOTO_QUALITY = 0.8;     // JPEG quality, 0 to 1
+
+        // Loads a file into an <img> element so the browser can decode it
+        const loadImageFile = file => new Promise((resolve, reject) => {
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+          img.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve(img);
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Image could not be decoded'));
+          };
+          img.src = url;
+        });
+
+        // Resizes the photo to MAX_PHOTO_SIDE and returns it as a JPEG data URL
+        const compressImage = async file => {
+          const img = await loadImageFile(file);
+          const scale = Math.min(1, MAX_PHOTO_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+          const width = Math.round(img.naturalWidth * scale);
+          const height = Math.round(img.naturalHeight * scale);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          // White background, so transparent PNG areas do not turn black in JPEG
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          return canvas.toDataURL('image/jpeg', PHOTO_QUALITY);
+        };
+
+
+
+        const handlePhotoUpload = async (event, item) => {
+          // Copy the file list first, then clear the input so the same file can be chosen again
+          const files = Array.from(event.target.files || []);
+          event.target.value = '';
+          if (files.length === 0) return;
 
           if (!item.photos) item.photos = [];
 
-          Array.from(files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              item.photos.push(e.target.result);
-              saveDraft();
-            };
-            reader.readAsDataURL(file);
-          });
+          let failedCount = 0;
+          for (const file of files) {
+            try {
+              item.photos.push(await compressImage(file));
+            } catch (error) {
+              failedCount++;
+              console.error('Photo could not be processed:', error);
+            }
+          }
 
-          // Reset file input
-          event.target.value = '';
-          showToast('Фотографијата е успешно прикачена', 'fa-solid fa-camera', '#059669');
+          saveDraft();
+
+          if (failedCount === 0) {
+            showToast('Фотографијата е успешно прикачена', 'fa-solid fa-camera', '#059669');
+          } else {
+            showToast(`Некои фотографии не можеа да се вчитаат (${failedCount})`, 'fa-solid fa-triangle-exclamation', '#DC2626');
+          }
         };
 
         const removePhoto = (item, idx) => {
