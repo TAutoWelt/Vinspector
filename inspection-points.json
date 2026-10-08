@@ -309,11 +309,11 @@
     ]
   },
   {
-    "key": "point-24",
-    "id": 24,
+    "key": "point-23",
+    "id": 23,
     "category": "EXTERIOR",
     "section": "ПОЗАДИ",
-    "title": "Резервна Гума / Сет",
+    "title": "Резервна Гума / ПЕНА+КОМПРЕСОР?",
     "subtitle": "Резервна гума / Пена + компресор / Дизалица",
     "tags": [
       "НЕМА РЕЗЕРВНО ТРКАЛО",
@@ -324,8 +324,8 @@
     ]
   },
   {
-    "key": "point-27",
-    "id": 27,
+    "key": "point-24",
+    "id": 24,
     "category": "EXTERIOR",
     "section": "ПОЗАДИ",
     "title": "Антена",
@@ -335,8 +335,8 @@
     ]
   },
   {
-    "key": "point-28",
-    "id": 28,
+    "key": "point-25",
+    "id": 25,
     "category": "EXTERIOR",
     "section": "ЛЕВА СТРАНА",
     "title": "Крило Задно - ЛЕВО",
@@ -348,8 +348,8 @@
     ]
   },
   {
-    "key": "point-29",
-    "id": 29,
+    "key": "point-26",
+    "id": 26,
     "category": "EXTERIOR",
     "section": "ЛЕВА СТРАНА",
     "title": "Врати - ЛЕВО",
@@ -363,8 +363,8 @@
     ]
   },
   {
-    "key": "point-30",
-    "id": 30,
+    "key": "point-27",
+    "id": 27,
     "category": "EXTERIOR",
     "section": "ЛЕВА СТРАНА",
     "title": "Стакла - ЛЕВО",
@@ -372,8 +372,8 @@
     "tags": []
   },
   {
-    "key": "point-31",
-    "id": 31,
+    "key": "point-28",
+    "id": 28,
     "category": "EXTERIOR",
     "section": "ЛЕВА СТРАНА",
     "title": "Прагови - ЛЕВО",
@@ -385,8 +385,8 @@
     ]
   },
   {
-    "key": "point-32",
-    "id": 32,
+    "key": "point-29",
+    "id": 29,
     "category": "EXTERIOR",
     "section": "ЛЕВА СТРАНА",
     "title": "БАНДАЖИ/ГУМИ ЛЕВИ",
@@ -411,8 +411,8 @@
     }
   },
   {
-    "key": "point-33",
-    "id": 33,
+    "key": "point-30",
+    "id": 30,
     "category": "EXTERIOR",
     "section": "ЛЕВА СТРАНА",
     "title": "Ретровизор - ЛЕВО",
@@ -424,8 +424,8 @@
     ]
   },
   {
-    "key": "point-34",
-    "id": 34,
+    "key": "point-31",
+    "id": 31,
     "category": "EXTERIOR",
     "section": "ЛЕВА СТРАНА",
     "title": "Крило Предно - ЛЕВО",
@@ -437,19 +437,20 @@
     ]
   },
   {
-    "key": "point-35",
-    "id": 35,
+    "key": "point-32",
+    "id": 32,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "ПАТОСНИЦИ",
     "subtitle": "Патосници",
     "tags": [
-      "НЕМА Патосници"
+      "НЕМА Патосници",
+      "Скинати"
     ]
   },
   {
-    "key": "point-36",
-    "id": 36,
+    "key": "point-33",
+    "id": 33,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Седишта",
@@ -461,13 +462,13 @@
       "ЗАДНО",
       "ОШТЕТЕН ТАПАЦИР",
       "ФЛЕКИ",
-      "НЕ РАБОТИ ЕЛ. ПОДЕСУВАЊЕ",
+      "НЕ РАБОТИ ЕЛЕКТРИКА",
       "ДУПЧЕ (ИЗГОРЕНО)"
     ]
   },
   {
-    "key": "point-37",
-    "id": 37,
+    "key": "point-34",
+    "id": 34,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Влага / Мувла",
@@ -479,8 +480,8 @@
     ]
   },
   {
-    "key": "point-38",
-    "id": 38,
+    "key": "point-35",
+    "id": 35,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Кров Тапацир",
@@ -488,8 +489,8 @@
     "tags": []
   },
   {
-    "key": "point-39",
-    "id": 39,
+    "key": "point-36",
+    "id": 36,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Сончев кров",
@@ -501,19 +502,8 @@
     ]
   },
   {
-    "key": "point-40",
-    "id": 40,
-    "category": "INTERIOR",
-    "section": "ЕНТЕРИЕР",
-    "title": "Волан",
-    "subtitle": "Состојба на кожа, истрошеност и команди на волан",
-    "tags": [
-      "ОШТЕТАНА КОЖА"
-    ]
-  },
-  {
-    "key": "point-41",
-    "id": 41,
+    "key": "point-37",
+    "id": 37,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "ПАЛЕЊЕ",
@@ -535,8 +525,8 @@
     }
   },
   {
-    "key": "point-42",
-    "id": 42,
+    "key": "point-38",
+    "id": 38,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Мотор - Работа",
@@ -549,8 +539,8 @@
     ]
   },
   {
-    "key": "point-43",
-    "id": 43,
+    "key": "point-39",
+    "id": 39,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Тест возење & Менувач",
@@ -565,8 +555,8 @@
     ]
   },
   {
-    "key": "point-44",
-    "id": 44,
+    "key": "point-40",
+    "id": 40,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Панели, Копчиња, Пластики",
@@ -579,8 +569,8 @@
     ]
   },
   {
-    "key": "point-45",
-    "id": 45,
+    "key": "point-41",
+    "id": 41,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Екрани",
@@ -592,8 +582,8 @@
     ]
   },
   {
-    "key": "point-46",
-    "id": 46,
+    "key": "point-42",
+    "id": 42,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "КЛУЧЕВИ",
@@ -614,8 +604,8 @@
     }
   },
   {
-    "key": "point-47",
-    "id": 47,
+    "key": "point-43",
+    "id": 43,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Warning Lights на табла",
@@ -629,8 +619,8 @@
     ]
   },
   {
-    "key": "point-48",
-    "id": 48,
+    "key": "point-44",
+    "id": 44,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Навигација",
@@ -641,8 +631,8 @@
     ]
   },
   {
-    "key": "point-49",
-    "id": 49,
+    "key": "point-45",
+    "id": 45,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Паркинг Камера",
@@ -655,8 +645,8 @@
     ]
   },
   {
-    "key": "point-50",
-    "id": 50,
+    "key": "point-46",
+    "id": 46,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Клима Уред",
@@ -667,8 +657,19 @@
     ]
   },
   {
-    "key": "point-51",
-    "id": 51,
+    "key": "point-47",
+    "id": 47,
+    "category": "INTERIOR",
+    "section": "ЕНТЕРИЕР",
+    "title": "Волан",
+    "subtitle": "Состојба на кожа, истрошеност и команди на волан",
+    "tags": [
+      "ОШТЕТАНА КОЖА"
+    ]
+  },
+  {
+    "key": "point-48",
+    "id": 48,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Километража",
@@ -691,8 +692,8 @@
     }
   },
   {
-    "key": "point-52",
-    "id": 52,
+    "key": "point-49",
+    "id": 49,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "Радио / Звук",
@@ -704,8 +705,8 @@
     ]
   },
   {
-    "key": "point-53",
-    "id": 53,
+    "key": "point-50",
+    "id": 50,
     "category": "INTERIOR",
     "section": "ЕНТЕРИЕР",
     "title": "ОПРЕМА",
@@ -715,8 +716,8 @@
     ]
   },
   {
-    "key": "point-54",
-    "id": 54,
+    "key": "point-51",
+    "id": 51,
     "title": "ОСТАНАТИ ЗАБЕЛЕШКИ",
     "subtitle": "Останати забелешки кои не се опфатени",
     "tags": [
