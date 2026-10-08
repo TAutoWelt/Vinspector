@@ -884,7 +884,7 @@
                 <i class="fa-solid fa-print"></i>
               </button>
 
-              <button @click="deleteReportFromArchive(idx)"
+              <button @click="deleteReportFromArchive(rep.id)"
                 class="w-8 h-8 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center text-xs active:scale-95 transition-all"
                 title="Избриши од архива">
                 <i class="fa-solid fa-trash"></i>
@@ -1319,7 +1319,8 @@
             date: todayDate,
             generalNotes: ''
           };
-          localStorage.removeItem('autocheck_current_draft');
+          enqueueWrite(() => dbRequest('draft', 'readwrite', store => store.delete(DRAFT_KEY)))
+            .catch(error => console.warn('Draft reset failed', error));
           draftLastSaved.value = null;
         };
 
@@ -1329,7 +1330,52 @@
           showToast('Податоците за возилото се зачувани', 'fa-solid fa-check', '#059669');
         };
 
-        // LocalStorage Persistence
+        // IndexedDB Persistence
+        const DB_NAME = 'autocheck';
+        const DB_VERSION = 1;
+        const DRAFT_KEY = 'current';
+        let dbPromise = null;
+        let writeChain = Promise.resolve();
+
+        const getDb = () => {
+          if (!dbPromise) {
+            dbPromise = new Promise((resolve, reject) => {
+              if (!window.indexedDB) {
+                reject(new Error('IndexedDB is not available'));
+                return;
+              }
+
+              const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+              request.onupgradeneeded = () => {
+                const db = request.result;
+                if (!db.objectStoreNames.contains('draft')) db.createObjectStore('draft');
+                if (!db.objectStoreNames.contains('reports')) db.createObjectStore('reports', { keyPath: 'id' });
+              };
+              request.onsuccess = () => resolve(request.result);
+              request.onerror = () => reject(request.error || new Error('Unable to open IndexedDB'));
+            });
+          }
+          return dbPromise;
+        };
+
+        const enqueueWrite = task => {
+          const run = writeChain.then(task);
+          writeChain = run.catch(() => {});
+          return run;
+        };
+
+        const dbRequest = async (storeName, mode, makeRequest) => {
+          const db = await getDb();
+          return new Promise((resolve, reject) => {
+            const transaction = db.transaction(storeName, mode);
+            let request;
+            transaction.oncomplete = () => resolve(request.result);
+            transaction.onerror = () => reject(transaction.error || new Error('IndexedDB transaction failed'));
+            transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'));
+            request = makeRequest(transaction.objectStore(storeName));
+          });
+        };
+
         const loadInspectionPoints = async () => {
           try {
             const response = await fetch('inspection-points.json', { cache: 'no-store' });
@@ -1351,7 +1397,7 @@
           }
         };
 
-        const saveDraft = () => {
+        const saveDraft = async () => {
           const draft = {
             schemaVersion: 5,
             vehicle: vehicle.value,
@@ -1360,20 +1406,20 @@
             savedAt: new Date().toISOString()
           };
           try {
-            localStorage.setItem('autocheck_current_draft', JSON.stringify(draft));
+            const plain = JSON.parse(JSON.stringify(draft));
+            await enqueueWrite(() => dbRequest('draft', 'readwrite', store => store.put(plain, DRAFT_KEY)));
             draftLastSaved.value = new Date();
-          } catch (e) {
-            console.warn('Draft save quota reached (photos may be large)', e);
+          } catch (error) {
+            console.warn('Draft save failed (photos may be large)', error);
           }
         };
 
-        const loadDraft = () => {
-          const raw = localStorage.getItem('autocheck_current_draft');
-          if (!raw) return;
+        const loadDraft = async () => {
           try {
-            const draft = JSON.parse(raw);
+            const draft = await dbRequest('draft', 'readonly', store => store.get(DRAFT_KEY));
+            if (!draft) return;
             if (draft.schemaVersion !== 5) {
-              localStorage.removeItem('autocheck_current_draft');
+              await enqueueWrite(() => dbRequest('draft', 'readwrite', store => store.delete(DRAFT_KEY)));
               showToast('Старата работна верзија е ресетирана поради новиот систем на точки', 'fa-solid fa-rotate-left', '#D97706');
               return;
             }
@@ -1390,26 +1436,64 @@
               items.value.push(...customItems);
             }
             draftLastSaved.value = new Date(draft.savedAt);
-          } catch (e) {
-            console.error('Error loading draft:', e);
+          } catch (error) {
+            console.error('Error loading draft:', error);
           }
         };
 
-        const loadSavedReports = () => {
-          const raw = localStorage.getItem('autocheck_reports');
-          if (raw) {
-            try {
-              const reports = JSON.parse(raw);
-              if (!Array.isArray(reports) || reports.some(report => report.schemaVersion !== 3)) {
-                localStorage.removeItem('autocheck_reports');
-                savedReports.value = [];
-                showToast('Старата архива е ресетирана поради новиот систем на точки', 'fa-solid fa-rotate-left', '#D97706');
-              } else {
-                savedReports.value = reports;
-              }
-            } catch (e) {
+        const loadSavedReports = async () => {
+          try {
+            const reports = await dbRequest('reports', 'readonly', store => store.getAll());
+            if (reports.some(report => report.schemaVersion !== 3)) {
+              await enqueueWrite(() => dbRequest('reports', 'readwrite', store => store.clear()));
               savedReports.value = [];
+              showToast('Старата архива е ресетирана поради новиот систем на точки', 'fa-solid fa-rotate-left', '#D97706');
+              return;
             }
+            savedReports.value = reports.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+          } catch (error) {
+            console.error('Error loading saved reports:', error);
+          }
+        };
+
+        const migrateFromLocalStorage = async () => {
+          try {
+            const rawDraft = localStorage.getItem('autocheck_current_draft');
+            const rawReports = localStorage.getItem('autocheck_reports');
+            if (!rawDraft && !rawReports) return;
+
+            if (rawDraft) {
+              const draft = JSON.parse(rawDraft);
+              await enqueueWrite(() => dbRequest('draft', 'readwrite', store => store.put(draft, DRAFT_KEY)));
+            }
+            if (rawReports) {
+              const reports = JSON.parse(rawReports);
+              if (Array.isArray(reports)) {
+                await enqueueWrite(async () => {
+                  const db = await getDb();
+                  await new Promise((resolve, reject) => {
+                    const transaction = db.transaction('reports', 'readwrite');
+                    reports.forEach(report => transaction.objectStore('reports').put(report));
+                    transaction.oncomplete = resolve;
+                    transaction.onerror = () => reject(transaction.error || new Error('Report migration failed'));
+                    transaction.onabort = () => reject(transaction.error || new Error('Report migration aborted'));
+                  });
+                });
+              }
+            }
+
+            localStorage.removeItem('autocheck_current_draft');
+            localStorage.removeItem('autocheck_reports');
+          } catch (error) {
+            console.error('Migration failed; localStorage data kept:', error);
+          }
+        };
+
+        const requestPersistentStorage = async () => {
+          try {
+            if (navigator.storage && navigator.storage.persist) await navigator.storage.persist();
+          } catch (error) {
+            console.warn('Persistent storage request failed:', error);
           }
         };
 
@@ -1440,10 +1524,11 @@
           return false;
         };
 
-        const saveReportToArchive = () => {
+        const saveReportToArchive = async () => {
           if (!validateRequiredVehicleFields()) return;
 
-          const reportId = 'AC-' + Date.now().toString().slice(-6);
+          // The random suffix prevents reports created in the same millisecond from sharing an ID.
+          const reportId = 'AC-' + Date.now().toString().slice(-6) + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
           const defects = items.value.filter(i => i.status === 'NOT_OK');
           const oks = items.value.filter(i => i.status === 'OK');
 
@@ -1460,9 +1545,14 @@
             totalCount: items.value.length
           };
 
-          savedReports.value.unshift(report);
-          localStorage.setItem('autocheck_reports', JSON.stringify(savedReports.value));
-          showToast(`Извештајот за ${vehicle.value.brand || 'возилото'} е зачуван во архива!`, 'fa-solid fa-floppy-disk', '#059669');
+          try {
+            await enqueueWrite(() => dbRequest('reports', 'readwrite', store => store.put(report)));
+            savedReports.value.unshift(report);
+            showToast(`Извештајот за ${vehicle.value.brand || 'возилото'} е зачуван во архива!`, 'fa-solid fa-floppy-disk', '#059669');
+          } catch (error) {
+            console.error('Error saving report:', error);
+            showToast('Грешка при зачувување. Пробајте повторно.', 'fa-solid fa-triangle-exclamation', '#DC2626');
+          }
         };
 
         const loadReportFromArchive = (rep) => {
@@ -1477,11 +1567,16 @@
           }
         };
 
-        const deleteReportFromArchive = (idx) => {
+        const deleteReportFromArchive = async id => {
           if (confirm('Дали сакате трајно да го избришете овој извештај од архивата?')) {
-            savedReports.value.splice(idx, 1);
-            localStorage.setItem('autocheck_reports', JSON.stringify(savedReports.value));
-            showToast('Извештајот е избришан', 'fa-solid fa-trash', '#EF4444');
+            try {
+              await enqueueWrite(() => dbRequest('reports', 'readwrite', store => store.delete(id)));
+              savedReports.value = savedReports.value.filter(report => report.id !== id);
+              showToast('Извештајот е избришан', 'fa-solid fa-trash', '#EF4444');
+            } catch (error) {
+              console.error('Error deleting report:', error);
+              showToast('Грешка при зачувување. Пробајте повторно.', 'fa-solid fa-triangle-exclamation', '#DC2626');
+            }
           }
         };
 
@@ -1592,8 +1687,17 @@
 
         onMounted(async () => {
           await loadInspectionPoints();
-          loadSavedReports();
-          loadDraft();
+          try {
+            await getDb();
+          } catch (error) {
+            console.error('IndexedDB is unavailable:', error);
+            showToast('Податоците нема да се зачуваат', 'fa-solid fa-triangle-exclamation', '#DC2626');
+            return;
+          }
+          await migrateFromLocalStorage();
+          await loadSavedReports();
+          await loadDraft();
+          await requestPersistentStorage();
         });
 
         return {
